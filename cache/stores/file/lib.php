@@ -359,16 +359,7 @@ class cachestore_file extends cache_store implements cache_is_key_aware, cache_i
         }
         // Lock it up!
         // We don't care if this succeeds or not, on some systems it will, on some it won't, meah either way.
-        //
-        // NOTE: On Linux systems using NFS an flock() will flush the local page cache of that file's data, so 
-        // not only will we suffer the overhead of the flock() call, but also the fread() down below will be more 
-        // expensive on every single cache read.  This may be good if what you want is very strict cache coherency, 
-        // but often times we can tolerate slightly stale cache data (eg: bounded by the file attribute cache 
-        // times).
-        // See Also: http://nfs.sourceforge.net/#faq_d10
-        if (empty($CFG->preventfilelocking)) {
-            flock($handle, LOCK_SH);
-        }
+        flock($handle, LOCK_SH);
         $data = '';
         // Read the data in 1Mb chunks. Small caches will not loop more than once.  We don't use filesize as it may
         // be cached with a different value than what we need to read from the file.
@@ -376,9 +367,7 @@ class cachestore_file extends cache_store implements cache_is_key_aware, cache_i
             $data .= fread($handle, 1048576);
         } while (!feof($handle));
         // Unlock it.
-        if (empty($CFG->preventfilelocking)) {
-            flock($handle, LOCK_UN);
-        }
+        flock($handle, LOCK_UN);
         // Return it unserialised.
         return $this->prep_data_after_read($data);
     }

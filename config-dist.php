@@ -376,8 +376,6 @@ $CFG->admin = 'admin';
 //     $CFG->localcachedir = '/var/local/cache';      // Intended for local node caching.
 //
 // Some filesystems such as NFS may not support file locking operations.
-// In other cases it may significantly reduce performance by causing local page cache 
-// to be flushed (see cache/stores/file/lib.php for additional comments).
 // Locking resolves race conditions and is strongly recommended for production servers.
 //     $CFG->preventfilelocking = false;
 //
