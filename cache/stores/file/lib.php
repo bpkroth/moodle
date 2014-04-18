@@ -333,6 +333,7 @@ class cachestore_file extends cache_store implements cache_is_key_aware, cache_i
      * @return mixed The data that was associated with the key, or false if the key did not exist.
      */
     public function get($key) {
+        global $CFG;
         $filename = $key.'.cache';
         $file = $this->file_path_for_key($key);
         $ttl = $this->definition->get_ttl();
@@ -363,11 +364,11 @@ class cachestore_file extends cache_store implements cache_is_key_aware, cache_i
         // NOTE: On Linux systems using NFS an flock() will flush the local 
         // page cache of that file's data, so not only will we suffer the 
         // overhead of the flock() call, but also the fread() down below will 
-        // be more expensive on every single cache read.  This may be good if 
-        // what you want is very strict cache coherency, but often times we can 
-        // tolerate slightly stale cache data (eg: bounded by the file 
-        // attribute cache times).  However, the risk of stale data should be 
-        // minimal since Moodle tends to hash files as a hash of their content.
+        // be more expensive on every single cache read since we'll need to go 
+        // all the way back to the NFS server.  This may be good if what you 
+        // want is very strict cache coherency, but often times we can tolerate 
+        // slightly stale cache data (eg: bounded by the file attribute cache 
+        // times).
         // See Also: http://nfs.sourceforge.net/#faq_d10
         if (empty($CFG->preventfilelocking)) {
             flock($handle, LOCK_SH);
