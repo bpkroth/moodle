@@ -368,7 +368,9 @@ class cachestore_file extends cache_store implements cache_is_key_aware, cache_i
         // all the way back to the NFS server.  This may be good if what you 
         // want is very strict cache coherency, but often times we can tolerate 
         // slightly stale cache data (eg: bounded by the file attribute cache 
-        // times).
+        // times).  Note that the risk of partial reads is absent due to the 
+        // write_file() calls correctly using the write to a temporary file and 
+        // (atomically) rename.
         // See Also: http://nfs.sourceforge.net/#faq_d10
         if (empty($CFG->preventfilelocking)) {
             flock($handle, LOCK_SH);
