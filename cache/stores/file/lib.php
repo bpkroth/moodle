@@ -370,7 +370,10 @@ class cachestore_file extends cache_store implements cache_is_key_aware, cache_i
         // slightly stale cache data (eg: bounded by the file attribute cache 
         // times).  Note that the risk of partial reads is absent due to the 
         // write_file() calls correctly using the write to a temporary file and 
-        // (atomically) rename.
+        // (atomically) rename.  Additionally, note that standard use of cto 
+        // (close-to-open) semantics means that even the fopen() call will skip 
+        // the local stat cache and go directly back to the server, so even 
+        // then stale cache reads won't happen.
         // See Also: http://nfs.sourceforge.net/#faq_d10
         if (empty($CFG->preventfilelocking)) {
             flock($handle, LOCK_SH);
