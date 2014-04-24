@@ -372,7 +372,14 @@ class mysqli_native_moodle_database extends moodle_database {
             $dbhost = "p:$dbhost";
         }
         ob_start();
+        // Optionally allow for client compression to reduce network traffic at the expense of some CPU.
+        if ($this->dboptions['compress']) {
+            $this->mysqli = mysqli_init();
+            $this->mysqli->real_connect($dbhhost, $dbuser, $dbpass, $dbname, $dbport, $dbsocket, MYSQLI_CLIENT_COMPRESS);
+        }
+        else{
         $this->mysqli = new mysqli($dbhost, $dbuser, $dbpass, $dbname, $dbport, $dbsocket);
+        }
         $dberr = ob_get_contents();
         ob_end_clean();
         $errorno = @$this->mysqli->connect_errno;
