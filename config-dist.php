@@ -59,6 +59,8 @@ $CFG->dboptions = array(
     'dbport'    => '',          // the TCP port number to use when connecting
                                 //  to the server. keep empty string for the
                                 //  default port
+    'compress'  => false,       // whether or not to compress network traffic 
+                                //  at the expense of some CPU
 );
 
 
