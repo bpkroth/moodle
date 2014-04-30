@@ -43,7 +43,9 @@ class cachestore_file_addinstance_form extends cachestore_addinstance_form {
         $form = $this->_form;
 
         $form->addElement('text', 'path', get_string('path', 'cachestore_file'));
-        $form->setType('path', PARAM_SAFEPATH);
+        # Stop stripping . characters from my paths - it prevents me from using the vhost name.
+        #$form->setType('path', PARAM_SAFEPATH);
+        $form->setType('path', PARAM_PATH);
         $form->addHelpButton('path', 'path', 'cachestore_file');
 
         $form->addElement('checkbox', 'autocreate', get_string('autocreate', 'cachestore_file'));
