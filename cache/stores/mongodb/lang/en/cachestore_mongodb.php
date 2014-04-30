@@ -41,3 +41,9 @@ $string['usesafe'] = 'Use safe';
 $string['usesafe_help'] = 'If enabled the usesafe option will be used during insert, get, and remove operations. If you\'ve specified a replica set this will be forced on anyway.';
 $string['usesafevalue'] = 'Use safe value';
 $string['usesafevalue_help'] = 'You can choose to provide a specific value for use safe. This will determine the number of servers that operations must be completed on before they are deemed to have been completed.';
+$string['serializer_igbinary'] = 'The igbinary serializer.';
+$string['serializer_php'] = 'The default PHP serializer.';
+$string['useserializer'] = 'Use serializer';
+$string['useserializer_help'] = 'Specifies the serializer to use for serializing non-scalar values.
+The valid serializers are php ((un)serialize()) or igbinary (igbinary_(un)serialize()).
+The latter is supported only when the igbinary extension is loaded.';

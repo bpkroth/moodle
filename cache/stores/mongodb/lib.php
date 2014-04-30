@@ -94,6 +94,18 @@ class cachestore_mongodb extends cache_store implements cache_is_configurable {
     protected $extendedmode = false;
 
     /**
+     * The serializer function to call.
+     * @var string
+     */
+    protected $serializer = 'serialize';
+
+    /**
+     * The unserializer function to call.
+     * @var string
+     */
+    protected $unserializer = 'unserialize';
+
+    /**
      * The definition has which is used in the construction of the collection.
      * @var string
      */
@@ -138,6 +150,19 @@ class cachestore_mongodb extends cache_store implements cache_is_configurable {
         }
         if (array_key_exists('extendedmode', $configuration)) {
             $this->extendedmode = $configuration['extendedmode'];
+        }
+        if (array_key_exists('serializer', $configuration)) {
+            if ($configuration['serializer'] == 'igbinary' && function_exists('igbinary_serialize') && function_exists('igbinary_unserialize')) {
+                $this->serializer = 'igbinary_serialize';
+                $this->unserializer = 'igbinary_unserialize';
+            }
+            else {
+                if ($configuration['serializer'] != 'php') {
+                    error_log(sprintf('WARNING: Unknown mongodb serializer configured (%s).  Falling back to standard php serializer.', $configuration['serializer']));
+                }
+                $this->serializer = 'serialize';
+                $this->unserializer = 'unserialize';
+            }
         }
 
         try {
@@ -247,7 +272,8 @@ class cachestore_mongodb extends cache_store implements cache_is_configurable {
         if ($result === null || !array_key_exists('data', $result)) {
             return false;
         }
-        $data = @unserialize($result['data']);
+        $fn = @$this->unserializer;
+        $data = $fn($result['data']);
         return $data;
     }
 
@@ -275,7 +301,8 @@ class cachestore_mongodb extends cache_store implements cache_is_configurable {
         $results = array();
         foreach ($cursor as $result) {
             $id = (string)$result['key'];
-            $results[$id] = unserialize($result['data']);
+            $fn = $this->unserializer;
+            $results[$id] = $fn($result['data']);
         }
         foreach ($keys as $key) {
             if (!array_key_exists($key, $results)) {
@@ -300,7 +327,8 @@ class cachestore_mongodb extends cache_store implements cache_is_configurable {
         } else {
             $record = $key;
         }
-        $record['data'] = serialize($data);
+        $fn = $this->serializer;
+        $record['data'] = $fn($data);
         $options = array(
             'upsert' => true,
             'safe' => $this->usesafe,
@@ -408,6 +436,20 @@ class cachestore_mongodb extends cache_store implements cache_is_configurable {
     }
 
     /**
+     * Gets an array of options to use as the serializer.
+     * @return array
+     */
+    public static function config_get_serializer_options() {
+        $options = array(
+            'php' => get_string('serializer_php', 'cachestore_mongodb')
+        );
+        if (function_exists('igbinary_serialize') && function_exists('igbinary_unserialize')) {
+            $options['igbinary'] = get_string('serializer_igbinary', 'cachestore_mongodb');
+        }
+        return $options;
+    }
+
+    /**
      * Takes the object from the add instance store and creates a configuration array that can be used to initialise an instance.
      *
      * @param stdClass $data
@@ -417,7 +459,8 @@ class cachestore_mongodb extends cache_store implements cache_is_configurable {
         $return = array(
             'server' => $data->server,
             'database' => $data->database,
-            'extendedmode' => (!empty($data->extendedmode))
+            'extendedmode' => (!empty($data->extendedmode)),
+            'serializer' => $data->serializer
         );
         if (!empty($data->username)) {
             $return['username'] = $data->username;
@@ -454,6 +497,9 @@ class cachestore_mongodb extends cache_store implements cache_is_configurable {
         }
         if (isset($config['extendedmode'])) {
             $data['extendedmode'] = (bool)$config['extendedmode'];
+        }
+        if (isset($config['serializer'])) {
+            $data['serializer'] = $config['serializer'];
         }
         if (!empty($config['username'])) {
             $data['username'] = $config['username'];
