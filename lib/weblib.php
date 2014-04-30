@@ -1179,6 +1179,20 @@ function format_text($text, $format = FORMAT_MOODLE, $options = null, $courseidd
             }
         }
 
+        /**
+         * TODO: FIXME: This seems to expire cache_text entries according to a 
+         * TTL even if the source content hasn't changed at all.  
+         *
+         * A better mechanism would take the last update time of the source 
+         * content into account.  For instance, a lastupdate field could be 
+         * kept on the cache_text source and compared at the time of cache 
+         * lookup to see if it needs to be invalidated.
+         *
+         * An even better improvment might be to allow stashing this data in a 
+         * local file cache a la MUC rather than solely storing this data in 
+         * the DB.
+         */
+
         if ($oldcacheitem = $DB->get_record('cache_text', array('md5key' => $md5key), '*', IGNORE_MULTIPLE)) {
             if ($oldcacheitem->timemodified >= $time) {
                 if (CLI_SCRIPT) {
