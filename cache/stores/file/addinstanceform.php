@@ -43,7 +43,9 @@ class cachestore_file_addinstance_form extends cachestore_addinstance_form {
         $form = $this->_form;
 
         $form->addElement('text', 'path', get_string('path', 'cachestore_file'));
-        $form->setType('path', PARAM_SAFEPATH);
+        # Stop stripping . characters from my paths - it prevents me from using the vhost name.
+        #$form->setType('path', PARAM_SAFEPATH);
+        $form->setType('path', PARAM_PATH);
         $form->addHelpButton('path', 'path', 'cachestore_file');
 
         $form->addElement('checkbox', 'autocreate', get_string('autocreate', 'cachestore_file'));
@@ -58,5 +60,12 @@ class cachestore_file_addinstance_form extends cachestore_addinstance_form {
         $form->addElement('checkbox', 'prescan', get_string('prescan', 'cachestore_file'));
         $form->setType('prescan', PARAM_BOOL);
         $form->addHelpButton('prescan', 'prescan', 'cachestore_file');
+
+        $serializeroptions = cachestore_file::config_get_serializer_options();
+        $form->addElement('select', 'serializer', get_string('useserializer', 'cachestore_file'), $serializeroptions);
+        $form->addHelpButton('serializer', 'useserializer', 'cachestore_file');
+        $form->setDefault('serializer', 'php');
+        $form->setType('serializer', PARAM_TEXT);
+        $form->setAdvanced('serializer');
     }
 }
