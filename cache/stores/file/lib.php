@@ -102,6 +102,16 @@ class cachestore_file extends cache_store implements cache_is_key_aware, cache_i
     protected $definition;
 
     /**
+     * The serializer function to call.
+     */
+    protected $serializer = 'serialize';
+
+    /**
+     * The unserializer function to call.
+     */
+    protected $unserializer = 'unserialize';
+
+    /**
      * A reference to the global $CFG object.
      *
      * You may be asking yourself why on earth this is here, but there is a good reason.
@@ -172,6 +182,20 @@ class cachestore_file extends cache_store implements cache_is_key_aware, cache_i
         } else {
             // Default: No, we will use multiple directories.
             $this->singledirectory = false;
+        }
+
+        if (array_key_exists('serializer', $configuration)) {
+            if ($configuration['serializer'] == 'igbinary' && function_exists('igbinary_serialize') && function_exists('igbinary_unserialize')) {
+                $this->serializer = 'igbinary_serialize';
+                $this->unserializer = 'igbinary_unserialize';
+            }
+            else {
+                if ($configuration['serializer'] != 'php') {
+                    error_log(sprintf('WARNING: Unknown file cache serializer configured (%s). Falling back to standard php serializer.', $configuration['serializer']));
+                }
+                $this->serializer = 'serialize';
+                $this->unserializer = 'unserialize';
+            }
         }
     }
 
@@ -453,7 +477,8 @@ class cachestore_file extends cache_store implements cache_is_key_aware, cache_i
      * @return string
      */
     protected function prep_data_before_save($data) {
-        return serialize($data);
+        $fn = $this->serializer;
+        return $fn($data);
     }
 
     /**
@@ -464,7 +489,8 @@ class cachestore_file extends cache_store implements cache_is_key_aware, cache_i
      * @throws coding_exception
      */
     protected function prep_data_after_read($data) {
-        $result = @unserialize($data);
+        $fn = $this->unserializer;
+        $result = @$fn($data);
         if ($result === false) {
             throw new coding_exception('Failed to unserialise data from file. Either failed to read, or failed to write.');
         }
@@ -570,13 +596,29 @@ class cachestore_file extends cache_store implements cache_is_key_aware, cache_i
     }
 
     /**
+     * Gets an array of options to use as the serializer.
+     * @return array
+     */
+    public static function config_get_serializer_options() {
+        $options = array(
+            'php' => get_string('serializer_php', 'cachestore_file')
+        );
+        if (function_exists('igbinary_serialize') && function_exists('igbinary_unserialize')) {
+            $options['igbinary'] = get_string('serializer_igbinary', 'cachestore_file');
+        }
+        return $options;
+    }
+
+    /**
      * Given the data from the add instance form this function creates a configuration array.
      *
      * @param stdClass $data
      * @return array
      */
     public static function config_get_configuration_array($data) {
-        $config = array();
+        $config = array(
+            'serializer' => $data->serializer
+        );
 
         if (isset($data->path)) {
             $config['path'] = $data->path;
@@ -602,6 +644,9 @@ class cachestore_file extends cache_store implements cache_is_key_aware, cache_i
      */
     public static function config_set_edit_form_data(moodleform $editform, array $config) {
         $data = array();
+        if (isset($config['serializer'])) {
+            $data['serializer'] = $config['serializer'];
+        }
         if (!empty($config['path'])) {
             $data['path'] = $config['path'];
         }

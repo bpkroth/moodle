@@ -50,3 +50,10 @@ It is advisable to only turn this on if the following is true:<br />
  *   - the things we are caching are more expensive to calculate, so the extra
  *     time to computer a better hash is a worthwhile trade-off.
  */
+
+$string['serializer_igbinary'] = 'The igbinary serializer.';
+$string['serializer_php'] = 'The default PHP serializer.';
+$string['useserializer'] = 'Use serializer';
+$string['useserializer_help'] = 'Specifies the serializer to use for serializing non-scalar values.
+The valid serializers are php ((un)serialize()) or igbinary (igbinary_(un)serialize()).
+The latter is supported only when the igbinary extension is loaded.';

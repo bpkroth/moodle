@@ -58,5 +58,12 @@ class cachestore_file_addinstance_form extends cachestore_addinstance_form {
         $form->addElement('checkbox', 'prescan', get_string('prescan', 'cachestore_file'));
         $form->setType('prescan', PARAM_BOOL);
         $form->addHelpButton('prescan', 'prescan', 'cachestore_file');
+
+        $serializeroptions = cachestore_file::config_get_serializer_options();
+        $form->addElement('select', 'serializer', get_string('useserializer', 'cachestore_file'), $serializeroptions);
+        $form->addHelpButton('serializer', 'useserializer', 'cachestore_file');
+        $form->setDefault('serializer', 'php');
+        $form->setType('serializer', PARAM_TEXT);
+        $form->setAdvanced('serializer');
     }
 }
