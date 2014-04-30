@@ -92,5 +92,12 @@ class cachestore_mongodb_addinstance_form extends cachestore_addinstance_form {
         $form->setDefault('extendedmode', 0);
         $form->setAdvanced('extendedmode');
         $form->setType('extendedmode', PARAM_BOOL);
+
+        $serializeroptions = cachestore_mongodb::config_get_serializer_options();
+        $form->addElement('select', 'serializer', get_string('useserializer', 'cachestore_mongodb'), $serializeroptions);
+        $form->addHelpButton('serializer', 'useserializer', 'cachestore_mongodb');
+        $form->setDefault('serializer', 'php');
+        $form->setType('serializer', PARAM_TEXT);
+        $form->setAdvanced('serializer');
     }
 }
