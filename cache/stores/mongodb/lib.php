@@ -328,7 +328,13 @@ class cachestore_mongodb extends cache_store implements cache_is_configurable {
             $record = $key;
         }
         $fn = $this->serializer;
-        $record['data'] = $fn($data);
+        $data = $fn($data);
+        if ($this->serializer == 'igbinary_serialize') {
+            $record['data'] = new MongoBinData($data, MongoBinData::GENERIC);
+        }
+        else {
+            $record['data'] = $data;
+        }
         $options = array(
             'upsert' => true,
             'safe' => $this->usesafe,
