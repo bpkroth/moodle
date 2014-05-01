@@ -15,6 +15,11 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * TODO: MongoDB supports expiration of content.  We should make MUC aware of 
+ * that via the TTL mechanism.
+ */
+
+/**
  * The library file for the MongoDB store plugin.
  *
  * This file is part of the MongoDB store plugin, it contains the API for interacting with an instance of the store.
