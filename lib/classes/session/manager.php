@@ -244,11 +244,12 @@ class manager {
          * Allow the use of alternative serializers like igbinary in 
          * order to save on storage and therefore network costs.
          */
-        $serialize_handler = 'php';  // We can move to 'php_serialize' after we require PHP 5.5.4 form Moodle.
         if (isset($CFG->session_serializer)) {
-            $serialize_handler = $CFG->session_serializer;
+            ini_set('session.serialize_handler', $CFG->session_serializer);
         }
-        ini_set('session.serialize_handler', $serialize_handler);
+        else {
+            $serialize_handler = 'php';  // We can move to 'php_serialize' after we require PHP 5.5.4 form Moodle.
+        }
 
         // Moodle does normal session timeouts, this is for leftovers only.
         ini_set('session.gc_probability', 1);
