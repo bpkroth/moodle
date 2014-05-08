@@ -240,6 +240,10 @@ class manager {
         ini_set('session.use_only_cookies', '1');
         ini_set('session.hash_function', '0');        // For now MD5 - we do not have room for sha-1 in sessions table.
         ini_set('session.use_strict_mode', '0');      // We have custom protection in session init.
+        /**
+         * TODO: Allow the use of alternative serializers like igbinary in 
+         * order to save on storage and therefore network costs.
+         */
         ini_set('session.serialize_handler', 'php');  // We can move to 'php_serialize' after we require PHP 5.5.4 form Moodle.
 
         // Moodle does normal session timeouts, this is for leftovers only.
