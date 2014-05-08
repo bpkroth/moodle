@@ -158,6 +158,7 @@ class database extends handler {
      * @return string
      */
     public function handler_read($sid) {
+        global $CFG;
         try {
             if (!$record = $this->database->get_record('sessions', array('sid'=>$sid), 'id')) {
                 // Let's cheat and skip locking if this is the first access,
@@ -207,7 +208,13 @@ class database extends handler {
             $data = '';
             $this->lasthash = sha1('');
         } else {
-            $data = base64_decode($record->sessdata);
+            // See NOTEs below.
+            if (isset($CFG->session_serializer) && $CFG->session_serializer == 'igbinary') {
+                $data = $record->sessdata;
+            }
+            else {
+                $data = base64_decode($record->sessdata);
+            }
             $this->lasthash = sha1($record->sessdata);
         }
 
@@ -227,12 +234,21 @@ class database extends handler {
      * @return bool success
      */
     public function handler_write($sid, $session_data) {
+        global $CFG;
+
         if ($this->failed) {
             // Do not write anything back - we failed to start the session properly.
             return false;
         }
 
-        $sessdata = base64_encode($session_data); // There might be some binary mess :-(
+        // Try sending raw binary data (for use with igbinary).
+        // NOTE: Requires changing the sessions.sessdata column schema to LONGBLOB instead of LONGTEXT.
+        if (isset($CFG->session_serializer) && $CFG->session_serializer == 'igbinary') {
+            $sessdata = $session_data;
+        }
+        else {
+            $sessdata = base64_encode($session_data); // There might be some binary mess :-(
+        }
         $hash = sha1($sessdata);
 
         if ($hash === $this->lasthash) {
