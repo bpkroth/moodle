@@ -1415,6 +1415,11 @@ class mysqli_native_moodle_database extends moodle_database {
     public function get_session_lock($rowid, $timeout) {
         parent::get_session_lock($rowid, $timeout);
 
+        /**
+         * TODO: Forward port session lock timeout tweaks.
+         * RT #336477
+         */
+
         $fullname = $this->dbname.'-'.$this->prefix.'-session-'.$rowid;
         $sql = "SELECT GET_LOCK('$fullname', $timeout)";
         $this->query_start($sql, null, SQL_QUERY_AUX);
