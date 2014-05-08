@@ -248,7 +248,7 @@ class manager {
             ini_set('session.serialize_handler', $CFG->session_serializer);
         }
         else {
-            $serialize_handler = 'php';  // We can move to 'php_serialize' after we require PHP 5.5.4 form Moodle.
+            ini_set('session.serialize_handler', 'php');    // We can move to 'php_serialize' after we require PHP 5.5.4 form Moodle.
         }
 
         // Moodle does normal session timeouts, this is for leftovers only.
