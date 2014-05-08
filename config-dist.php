@@ -240,6 +240,10 @@ $CFG->admin = 'admin';
 //      $CFG->session_memcached_acquire_lock_timeout = 120;
 //      $CFG->session_memcached_lock_expire = 7200;       // Ignored if memcached extension <= 2.1.0
 //
+// Following setting allows you to use a different PHP serializer for the above session stores.
+//      $CFG->session_serializer = 'php';       // the default
+//      $CFG->session_serializer = 'igbinary';  // may result in smaller data and therefore less network traffic so faster response times
+//
 // Following setting allows you to alter how frequently is timemodified updated in sessions table.
 //      $CFG->session_update_timemodified_frequency = 20; // In seconds.
 //
