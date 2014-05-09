@@ -248,7 +248,7 @@ class sessions_db extends handler {
                 // Lock session if exists and not already locked.
                 $this->database->get_session_lock($record->id, $this->acquiretimeout);
                 $this->recordid = $record->id;
-                $this->timemodifed = $record->timemodifed;
+                $this->timemodified = $record->timemodified;
             }
         } catch (\dml_sessionwait_exception $ex) {
             // This is a fatal error, better inform users.
@@ -263,7 +263,7 @@ class sessions_db extends handler {
             error_log('Unknown exception when starting database session : '.$sid.' - '.$ex->getMessage());
             $this->failed = true;
             $this->recordid = null;
-            $this->timemodifed = null;
+            $this->timemodified = null;
             return '';
         }
 
@@ -272,7 +272,7 @@ class sessions_db extends handler {
             // Ignore - something else just deleted the session record.
             $this->failed = true;
             $this->recordid = null;
-            $this->timemodifed = null;
+            $this->timemodified = null;
             return '';
         }
         $this->failed = false;
