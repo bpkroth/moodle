@@ -373,3 +373,102 @@ function setup_DB() {
 
     return true;
 }
+
+
+/**
+ * Sets up global $SDB moodle_database instance for use by core\session\sessions_db
+ *
+ * FIXME: This is currently just a copy/paste/edit for the setup_DB() function.  It could be cleaner.
+ *
+ * @global stdClass $CFG The global configuration instance.
+ * @see config.php
+ * @see config-dist.php
+ * @global stdClass $SDB The global moodle_database instance.
+ * @return void|bool Returns true when finished setting up $SDB. Returns void when $SDB has already been set.
+ */
+function setup_SDB() {
+    global $CFG, $SDB;
+
+    if (isset($SDB)) {
+        return;
+    }
+
+    if (!isset($CFG->sessions_dbuser)) {
+        $CFG->sessions_dbuser = '';
+    }
+
+    if (!isset($CFG->sessions_dbpass)) {
+        $CFG->sessions_dbpass = '';
+    }
+
+    if (!isset($CFG->sessions_dbname)) {
+        $CFG->sessions_dbname = '';
+    }
+
+    if (!isset($CFG->sessions_dblibrary)) {
+        $CFG->sessions_dblibrary = 'native';
+        // use new drivers instead of the old adodb driver names
+        switch ($CFG->sessions_dbtype) {
+            case 'postgres7' :
+                $CFG->sessions_dbtype = 'pgsql';
+                break;
+
+            case 'mssql_n':
+                $CFG->sessions_dbtype = 'mssql';
+                break;
+
+            case 'oci8po':
+                $CFG->sessions_dbtype = 'oci';
+                break;
+
+            case 'mysql' :
+                $CFG->sessions_dbtype = 'mysqli';
+                break;
+        }
+    }
+
+    if (!isset($CFG->sessions_dboptions)) {
+        $CFG->sessions_dboptions = array();
+    }
+
+    if (isset($CFG->sessions_dbpersist)) {
+        $CFG->sessions_dboptions['dbpersist'] = $CFG->sessions_dbpersist;
+    }
+
+    if (!$SDB = moodle_database::get_driver_instance($CFG->sessions_dbtype, $CFG->sessions_dblibrary)) {
+        throw new dml_exception('dbdriverproblem', "Unknown driver $CFG->sessions_dblibrary/$CFG->sessions_dbtype");
+    }
+
+    try {
+        $SDB->connect($CFG->sessions_dbhost, $CFG->sessions_dbuser, $CFG->sessions_dbpass, $CFG->sessions_dbname, $CFG->sessions_prefix, $CFG->sessions_dboptions);
+    } catch (moodle_exception $e) {
+        if (empty($CFG->noemailever) and !empty($CFG->emailconnectionerrorsto)) {
+            if (file_exists($CFG->dataroot.'/emailcount')){
+                $fp = @fopen($CFG->dataroot.'/emailcount', 'r');
+                $content = @fread($fp, 24);
+                @fclose($fp);
+                if((time() - (int)$content) > 600){
+                    //email directly rather than using messaging
+                    @mail($CFG->emailconnectionerrorsto,
+                        'WARNING: Database connection error: '.$CFG->wwwroot,
+                        'Connection error: '.$CFG->wwwroot);
+                    $fp = @fopen($CFG->dataroot.'/emailcount', 'w');
+                    @fwrite($fp, time());
+                }
+            } else {
+               //email directly rather than using messaging
+               @mail($CFG->emailconnectionerrorsto,
+                    'WARNING: Database connection error: '.$CFG->wwwroot,
+                    'Connection error: '.$CFG->wwwroot);
+               $fp = @fopen($CFG->dataroot.'/emailcount', 'w');
+               @fwrite($fp, time());
+            }
+        }
+        // rethrow the exception
+        throw $e;
+    }
+
+    $CFG->sessions_dbfamily = $SDB->get_dbfamily(); // TODO: BC only for now
+
+    return true;
+}
