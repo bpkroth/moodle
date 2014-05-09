@@ -8908,6 +8908,17 @@ function get_performance_info() {
     $info['html'] .= '<span class="dbtime">DB queries time: '.$info['dbtime'].' secs</span> ';
     $info['txt'] .= 'db queries time: ' . $info['dbtime'] . 's ';
 
+    global $SDB;
+    if ($SDB) {
+        $info['sdbqueries'] = $SDB->perf_get_reads().'/'.($SDB->perf_get_writes());
+        $info['html'] .= '<span class="dbqueries">SDB reads/writes: '.$info['sdbqueries'].'</span> ';
+        $info['txt'] .= 'sdb reads/writes: '.$info['sdbqueries'].' ';
+
+        $info['sdbtime'] = round($SDB->perf_get_queries_time(), 5);
+        $info['html'] .= '<span class="dbtime">SDB queries time: '.$info['sdbtime'].' secs</span> ';
+        $info['txt'] .= 'sdb queries time: ' . $info['sdbtime'] . 's ';
+    }
+
     if (function_exists('posix_times')) {
         $ptimes = posix_times();
         if (is_array($ptimes)) {
