@@ -79,6 +79,7 @@ $CFG->sessions_dboptions = array(
     'dbport'    => '',
     'compress'  => true,    // NOTE: Depends on patches/mysqli-client-compression branch patches.
 );
+$CFG->sessionsdb_perf   = false;    // Whether or not to include performance details output on the SDB in the footer.
  */
 
 //=========================================================================

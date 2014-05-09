@@ -8908,7 +8908,7 @@ function get_performance_info() {
     $info['html'] .= '<span class="dbtime">DB queries time: '.$info['dbtime'].' secs</span> ';
     $info['txt'] .= 'db queries time: ' . $info['dbtime'] . 's ';
 
-    if (!empty($CFG->sessionsdb_perf)) {
+    if (!empty($CFG->sessions_dbperf)) {
         global $SDB;
         if ($SDB) {
             $info['sdbqueries'] = $SDB->perf_get_reads().'/'.$SDB->perf_get_writes();
