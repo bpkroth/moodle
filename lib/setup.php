@@ -426,6 +426,13 @@ if (!empty($CFG->earlyprofilingenabled)) {
 global $DB;
 
 /**
+ * Sessions database connection. Used for all access to the sessions database.
+ * @global moodle_database $SDB
+ * @name $SDB
+ */
+global $SDB;
+
+/**
  * Moodle's wrapper round PHP's $_SESSION.
  *
  * @global object $SESSION
