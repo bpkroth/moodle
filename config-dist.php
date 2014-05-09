@@ -64,6 +64,23 @@ $CFG->dboptions = array(
 );
 
 
+// Separate sessions db settings (see session_handler_class = '\core\session\sessions_db' below):
+/*
+$CFG->sessions_dbtype    = 'mysqli';
+$CFG->sessions_dblibrary = 'native';
+$CFG->sessions_dbhost    = 'localhost';
+$CFG->sessions_dbname    = 'moodle';
+$CFG->sessions_dbuser    = 'username';
+$CFG->sessions_dbpass    = 'password';
+$CFG->sessions_prefix    = 'mdl_';
+$CFG->sessions_dboptions = array(
+    'dbpersist' => false,
+    'dbsocket'  => false,
+    'dbport'    => '',
+    'compress'  => true,    // NOTE: Depends on patches/mysqli-client-compression branch patches.
+);
+ */
+
 //=========================================================================
 // 2. WEB SITE LOCATION
 //=========================================================================
@@ -229,6 +246,12 @@ $CFG->admin = 'admin';
 // Following settings may be used to select session driver, uncomment only one of the handlers.
 //   Database session handler (not compatible with MyISAM):
 //      $CFG->session_handler_class = '\core\session\database';
+//      $CFG->session_database_acquire_lock_timeout = 120;
+//
+//   Separate database session handler.  It can be used to direct sessdata
+//   content at a data with relaxed durability settings for higher update
+//   performance:
+//      $CFG->session_handler_class = '\core\session\sessions_db';
 //      $CFG->session_database_acquire_lock_timeout = 120;
 //
 //   File session handler (file system locking required):
