@@ -8908,25 +8908,27 @@ function get_performance_info() {
     $info['html'] .= '<span class="dbtime">DB queries time: '.$info['dbtime'].' secs</span> ';
     $info['txt'] .= 'db queries time: ' . $info['dbtime'] . 's ';
 
-    global $SDB;
-    if ($SDB) {
-        $info['sdbqueries'] = $SDB->perf_get_reads().'/'.($SDB->perf_get_writes());
-        $info['html'] .= '<span class="dbqueries">SDB reads/writes: '.$info['sdbqueries'].'</span> ';
-        $info['txt'] .= 'sdb reads/writes: '.$info['sdbqueries'].' ';
+    if (!empty($CFG->sessionsdb_perf)) {
+        global $SDB;
+        if ($SDB) {
+            $info['sdbqueries'] = $SDB->perf_get_reads().'/'.$SDB->perf_get_writes();
+            $info['html'] .= '<span class="dbqueries">SDB reads/writes: '.$info['sdbqueries'].'</span> ';
+            $info['txt'] .= 'sdb reads/writes: '.$info['sdbqueries'].' ';
 
-        $info['sdbtime'] = round($SDB->perf_get_queries_time(), 5);
-        $info['html'] .= '<span class="dbtime">SDB queries time: '.$info['sdbtime'].' secs</span> ';
-        $info['txt'] .= 'sdb queries time: ' . $info['sdbtime'] . 's ';
-    }
+            $info['sdbtime'] = round($SDB->perf_get_queries_time(), 5);
+            $info['html'] .= '<span class="dbtime">SDB queries time: '.$info['sdbtime'].' secs</span> ';
+            $info['txt'] .= 'sdb queries time: ' . $info['sdbtime'] . 's ';
+        }
 
-    if (function_exists('posix_times')) {
-        $ptimes = posix_times();
-        if (is_array($ptimes)) {
-            foreach ($ptimes as $key => $val) {
-                $info[$key] = $ptimes[$key] -  $PERF->startposixtimes[$key];
+        if (function_exists('posix_times')) {
+            $ptimes = posix_times();
+            if (is_array($ptimes)) {
+                foreach ($ptimes as $key => $val) {
+                    $info[$key] = $ptimes[$key] -  $PERF->startposixtimes[$key];
+                }
+                $info['html'] .= "<span class=\"posixtimes\">ticks: $info[ticks] user: $info[utime] sys: $info[stime] cuser: $info[cutime] csys: $info[cstime]</span> ";
+                $info['txt'] .= "ticks: $info[ticks] user: $info[utime] sys: $info[stime] cuser: $info[cutime] csys: $info[cstime] ";
             }
-            $info['html'] .= "<span class=\"posixtimes\">ticks: $info[ticks] user: $info[utime] sys: $info[stime] cuser: $info[cutime] csys: $info[cstime]</span> ";
-            $info['txt'] .= "ticks: $info[ticks] user: $info[utime] sys: $info[stime] cuser: $info[cutime] csys: $info[cstime] ";
         }
     }
 
