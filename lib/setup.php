@@ -427,6 +427,11 @@ global $DB;
 
 /**
  * Sessions database connection. Used for all access to the sessions database.
+ *
+ * NOTE: Given the currently setup_SDB() method, this should be defined here in 
+ * order for garbage collection to properly remove the non-dbpersist 
+ * connections at page end.
+ *
  * @global moodle_database $SDB
  * @name $SDB
  */
