@@ -219,6 +219,7 @@ class cachestore_mongodb extends cache_store implements cache_is_configurable {
         $this->definitionhash = $definition->generate_definition_hash();
         $this->collection = $this->database->selectCollection($this->definitionhash);
         $this->collection->ensureIndex(array('key' => 1), array(
+            'unique' => true, # Otherwise the insert() operation in set() may result in duplicate cache values.
             'safe' => $this->usesafe,
             'name' => 'idx_key'
         ));
