@@ -215,6 +215,7 @@ class sessions_db extends handler {
         }
         $this->recordid = null;
         $this->lasthash = null;
+        $this->timemodified = null;
         return true;
     }
 
