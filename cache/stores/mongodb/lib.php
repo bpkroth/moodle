@@ -273,8 +273,13 @@ class cachestore_mongodb extends cache_store implements cache_is_configurable {
         if ($result === null || !array_key_exists('data', $result)) {
             return false;
         }
-        $fn = @$this->unserializer;
-        $data = $fn($result['data']);
+        $fn = $this->unserializer;
+        if ($fn == 'igbinary_serializer') {
+            $data = @$fn($result['data']->bin);
+        }
+        else {
+            $data = @$fn($result['data']);
+        }
         return $data;
     }
 
