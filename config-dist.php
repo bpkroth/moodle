@@ -249,7 +249,10 @@ $CFG->admin = 'admin';
 //      $CFG->session_mongodb_replicaset = '';				// optional
 //      $CFG->session_mongodb_usesafe = true;				// set to false to not wait for possible write errors and possibly increase performance
 //      $CFG->session_mongodb_acquire_lock_timeout = 120;
-//      $CFG->session_mongodb_lock_expire = 7200;
+//      # NOTE: If you change these values you must drop and reindex the sessdata and sesslock collections:
+//      $CFG->session_mongodb_lock_expire = 7200;			// how long to leave stale locks in MongoDB before removing them - this should be at least as large as idle session timeout
+//      $CFG->session_mongodb_sessdata_expire = 28800;			// how long to leave stale sessdata in MongoDB before removing them
+//      $CFG->session_mongodb_reindex_timestamp = 1399755771;		// set this to the current timestamp to force the indices to be rebuilt when you change the values above
 //
 // Following setting allows you to alter how frequently is timemodified updated in sessions table.
 //      $CFG->session_update_timemodified_frequency = 20; // In seconds.
