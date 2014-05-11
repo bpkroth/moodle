@@ -321,6 +321,9 @@ class sessions_db extends handler {
         $hash = sha1($session_data);
         # Try to skip a write if we can.
         # TODO: Hmm, will this interact poorly with the timemodified pruning behavior?
+        # Probably not since there's a lot of _lastaccess and _lastloaded type 
+        # of fields in the session data that cause this hash to never remain 
+        # the same so it gets updated everytime anyways.
         if ($hash === $this->lasthash) {
             return true;
         }
