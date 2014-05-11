@@ -291,6 +291,8 @@ class sessions_db extends handler {
                 #$data = base64_decode($record->sessdata);
                 $data = $record->sessdata;
             }
+
+            # Hash on the data fed to and given from the user.
             $this->lasthash = sha1($data);
         }
 
@@ -315,7 +317,14 @@ class sessions_db extends handler {
             return false;
         }
 
+        # Hash on the data fed to and given from the user.
         $hash = sha1($session_data);
+        # Try to skip a write if we can.
+        # TODO: Hmm, will this interact poorly with the timemodified pruning behavior?
+        if ($hash === $this->lasthash) {
+            return true;
+        }
+
         // Try sending raw binary data (for use with igbinary).
         // NOTE: Requires changing the sessions.sessdata column schema to LONGBLOB instead of LONGTEXT.
         // NOTE: igbinary encoded session data doesn't compress very well (See Also: patches/mysqli-client-compression branch).
@@ -325,10 +334,6 @@ class sessions_db extends handler {
         else {
             #$sessdata = base64_encode($session_data); // There might be some binary mess :-(
             $sessdata = $session_data;  // But we don't really care since we're using a LONGBLOB field anyways.
-        }
-
-        if ($hash === $this->lasthash) {
-            return true;
         }
 
         try {
