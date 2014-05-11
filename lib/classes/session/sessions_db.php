@@ -287,9 +287,10 @@ class sessions_db extends handler {
                 $data = $record->sessdata;
             }
             else {
-                $data = base64_decode($record->sessdata);
+                #$data = base64_decode($record->sessdata);
+                $data = $record->sessdata;
             }
-            $this->lasthash = sha1($record->sessdata);
+            $this->lasthash = sha1($data);
         }
 
         return $data;
@@ -313,15 +314,17 @@ class sessions_db extends handler {
             return false;
         }
 
+        $hash = sha1($session_data);
         // Try sending raw binary data (for use with igbinary).
         // NOTE: Requires changing the sessions.sessdata column schema to LONGBLOB instead of LONGTEXT.
+        // NOTE: igbinary encoded session data doesn't compress very well (See Also: patches/mysqli-client-compression branch).
         if ($this->session_serializer == 'igbinary') {
             $sessdata = $session_data;
         }
         else {
-            $sessdata = base64_encode($session_data); // There might be some binary mess :-(
+            #$sessdata = base64_encode($session_data); // There might be some binary mess :-(
+            $sessdata = $session_data;  // But we don't really care since we're using a LONGBLOB field anyways.
         }
-        $hash = sha1($sessdata);
 
         if ($hash === $this->lasthash) {
             return true;
