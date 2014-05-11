@@ -242,7 +242,9 @@ $CFG->admin = 'admin';
 //
 // Following setting allows you to use a different PHP serializer for the above session stores.
 //      $CFG->session_serializer = 'php';       // the default
-//      $CFG->session_serializer = 'igbinary';  // may result in smaller data and therefore less network traffic so faster response times
+//      $CFG->session_serializer = 'igbinary';  // may result in smaller data and therefore less network traffic 
+//      					// so faster response times, however may not react well when used 
+//      					// with network compression for the backing store (eg: db or memcached)
 //
 // Following setting allows you to alter how frequently is timemodified updated in sessions table.
 //      $CFG->session_update_timemodified_frequency = 20; // In seconds.
