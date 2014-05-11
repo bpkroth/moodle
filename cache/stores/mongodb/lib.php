@@ -274,7 +274,7 @@ class cachestore_mongodb extends cache_store implements cache_is_configurable {
             return false;
         }
         $fn = $this->unserializer;
-        if ($fn == 'igbinary_serializer') {
+        if ($fn == 'igbinary_unserializer') {
             $data = @$fn($result['data']->bin);
         }
         else {
@@ -336,7 +336,7 @@ class cachestore_mongodb extends cache_store implements cache_is_configurable {
         $fn = $this->serializer;
         $data = $fn($data);
         if ($this->serializer == 'igbinary_serialize') {
-            $record['data'] = new MongoBinData($data);
+            $record['data'] = new MongoBinData($data, MongoBinData::BYTE_ARRAY);
         }
         else {
             $record['data'] = $data;
