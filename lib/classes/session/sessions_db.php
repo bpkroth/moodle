@@ -287,6 +287,7 @@ class sessions_db extends handler {
                 $data = $record->sessdata;
             }
             else {
+                # See NOTEs below.
                 #$data = base64_decode($record->sessdata);
                 $data = $record->sessdata;
             }
