@@ -145,7 +145,7 @@ class mongodb extends handler {
         }
 
         try {
-            // Mongo class is deprecated.
+            // NOTE: The Mongo class is deprecated.  The mongodb cachestore should probably also be fixed up.
             $this->connection = new MongoClient($server, $options);
         } catch (MongoConnectionException $e) {
             // We only want to catch MongoConnectionExceptions here.
@@ -179,8 +179,9 @@ class mongodb extends handler {
 
     /**
      * Make sure that the collections have the necessary indexes.
+     * @param $force_reindex Whether or not to force a reindex.
      */
-    public function setup_collection_indexes() {
+    public function setup_collection_indexes($force_reindex = false) {
         global $CFG;
 
         # Check to see if we need to reindex.
@@ -199,11 +200,13 @@ class mongodb extends handler {
             'name' => 'idx_key_unique'
         ));
         if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
+
         $config_doc = $config_collection->findOne(array('key' => 'last_reindex_timestamp'), array('value'));
         if (!empty($config_doc) && !empty($config_doc['value'])) {
             $last_reindex_timestamp = $config_doc['value'];
         }
-        if (!empty($last_reindex_timestamp) && $last_reindex_timestamp >= $reindex_timestamp) {
+
+        if (!$force_reindex && !empty($last_reindex_timestamp) && $last_reindex_timestamp >= $reindex_timestamp) {
             return;
         }
 
@@ -220,9 +223,15 @@ class mongodb extends handler {
         # periods.
         # Alternatively, we could skip expiration in the MongoDB server 
         # entirely and do it all in the client, but I think that would be more 
-        # prone to contention.
+        # prone to contention and extra client side operations.
 
+        # Additionally, if we're only going to be doing this section every once 
+        # in a while, we should probably be willing to take the hit to double 
+        # check the responses for errors, so we skip the usesafe check here.
+
+        #
         # Setup the sessdata collection indices.
+        #
         $result = $this->sessdata_collection->deleteIndexes();
         if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
         # Here's an index to enforce uniqueness constraints on the sid field.
@@ -251,7 +260,9 @@ class mongodb extends handler {
         ));
         if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
 
+        #
         # Setup the sesslock collection.
+        #
         $result = $this->sesslock_collection->deleteIndexes();
         if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
         # Here's an index to enforce uniqueness constraints on the sid field.
@@ -266,6 +277,8 @@ class mongodb extends handler {
         # We should only ever need to perform point lookups of session ids, so 
         # hash indexes should be most efficient, so add one of those too.
         $result = $this->sesslock_collection->ensureIndex(array('sid' => 'hashed'), array(
+            #'safe' => $this->usesafe,
+            #'w' => ($this->usesafe) ? 1 : 0,
             #'unique' => true,  # hash indexes currently don't support unique constraints
             'name' => 'idx_sid_hashed'
         ));
@@ -289,6 +302,7 @@ class mongodb extends handler {
             )
         );
         if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
+        if (is_array($result) && $result['n'] != 1) throw new exception('mongodbwriteproblem', 'error');
     }
 
     /**
@@ -364,9 +378,13 @@ class mongodb extends handler {
      * A function to acquire a lock document.
      */
     private function get_session_lock($sid) {
+        # TODO: Hmm, should we be throwing an error in the case that it appears 
+        # that we're already locked, or should we attempt to reacquire a lock?  
+        # That might lead to deadlock situations.
         if (!empty($this->sesslock_id)) {
             throw new coding_exception('sesslock_id is already set.');
         }
+
         $lockdoc = array(
             'sid' => $sid   # NOTE: This should be a unique indexed field, per above.
         );
@@ -381,20 +399,32 @@ class mongodb extends handler {
             # try to insert the sesslock document
             $result = $this->sesslock_collection->insert($lockdoc, array(
                 # NOTE: We can't usesafe=false here, since we need to be able 
-                # to check the response.
+                # to check the response to see if someone else beat us to the lock 
+                # acquisition.
                 #'safe' => $this->usesafe,
                 #'w' => ($this->usesafe) ? 1 : 0,
             ));
             if (!self::check_mongodb_response($result)) {
-                # if it fails, check to see if we've timedout
+                # If it fails, check to see if we've timedout while waiting for the lock.
                 if (time() - $start_time >= $this->acquiretimeout) {
                     break;
                 }
-                # else, wait a moment and try again
-                usleep(2000);  # 2 ms
+                # Else, wait a moment and try again.
+                # FIXME? Why 1ms ... no real reason.  I tried to reason out some 
+                # reasonable backoff parameters and acceptable wait times 
+                # without giving up too much responsiveness or overwhelming the 
+                # system, but this ultimately seemed to be good enough.  
+                # Usually our target page load times seem to be around 100ms, 
+                # so we could guess that we're coming in at half of that (50ms) 
+                # and that we have half of that (25ms) left to wait, but that 
+                # seemed to long to wait in the optimal case that we came in 
+                # just before the page finished.  Also note that there is no 
+                # fairness in this scheme since whoever gets there first gets 
+                # the lock, so it could lead to starvation.
+                usleep(1000);  # 1 ms
             }
             else {
-                // lock acquired - save the id
+                // lock acquired - save the id, which will cause us to exit this loop
                 $this->sesslock_id = (string)$lockdoc['_id'];
             }
         } while (empty($this->sesslock_id));
@@ -402,26 +432,48 @@ class mongodb extends handler {
         if (empty($this->sesslock_id)) {
             throw new dml_sessionwait_exception();
         }
+
+        return $this->sesslock_id;
     }
 
     /**
      * A function to release a lock document.
+     *
+     * NOTE: Currently releases the lock document by and _id that was saved in
+     * the get_session_lock() function, though it could possibly release by
+     * sid, but that would probably interact poorly in the case that something 
+     * removed this session's lock, acquired one of its own under the same sid, 
+     * and then was trying to do work.  Then this one would make matters worse 
+     * by later on removing the other handler's lock allowing a third party to 
+     * starting working as well.
      */
     private function release_session_lock() {
         if (empty($this->sesslock_id)) {
             throw new coding_exception('sesslock_id is not set.');
         }
+
         $lockdoc = array(
             '_id' => new MongoId($this->sesslock_id)
         );
         $result = $this->sesslock_collection->remove($lockdoc, array(
-            # These locks aren't removed on disconnect, so we need to try a 
-            # little harder to make sure they get released.
-            #'safe' => $this->usesafe,
-            #'w' => ($this->usesafe) ? 1 : 0,
+            # These locks aren't removed on disconnect like they are for MySQL, 
+            # so we should probably try a little harder to make sure they get 
+            # released.
+            # Then again, all callers just ignore the problem anyways, so I'm 
+            # not sure what good it is to wait on this.
+            # DONE: Perhaps we should error_log() the response instead, or just 
+            # skip it entirely and hope that it works itself out.
+            # Besides this generally (close(), but not on destroy()) happens 
+            # after the output stream has already been closed, so we usually 
+            # can't inform the user anyways.
+            'safe' => $this->usesafe,
+            'w' => ($this->usesafe) ? 1 : 0,
         ));
-        if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
-        if ($result['n'] == 0) throw new exception('mongodbwriteproblem', 'error');    # perhaps something else released the lock
+        #if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
+        if (!self::check_mongodb_response($result)) error_log('Failed to remove mongodb sesslock '.$this->sesslock_id);
+        ##if ($result['n'] == 0) throw new exception('mongodbwriteproblem', 'error');    # perhaps something else released the lock
+        #if ($result['n'] == 0) error_log('Failed to remove mongodb sesslock '.$this->sesslock_id);    # perhaps something else released the lock
+        
         $this->sesslock_id = null;
     }
 
@@ -454,10 +506,18 @@ class mongodb extends handler {
                 // Ignore any problems.
             }
         }
+
         $this->sessdata_id = null;
         $this->sesslock_id = null;
         $this->lasthash = null;
         $this->timemodified = null;
+
+        # DONE: Should we dispose of the MongoClient, MongoCollection handles, 
+        # or just let the usual destructor cleanup handle that?
+        # Probably leaving them as is plays nicer with persistent connections.
+        # Also the mongodb cachestore driver doesn't seem to clean them up at 
+        # all.
+ 
         return true;
     }
 
@@ -490,9 +550,9 @@ class mongodb extends handler {
                 $this->timemodified = null;
                 return '';
             }
-            #if (!$this->sesslock_id) {
             if (!$this->sessdata_id) {
                 // Lock session if exists and not already locked.
+                // TODO: What about the "not already locked" part?
                 $this->get_session_lock($sid);
                 $this->sessdata_id = $record_id;
                 $this->timemodified = $record['timemodified'];
@@ -535,9 +595,12 @@ class mongodb extends handler {
                 $data = $record['sessdata']->bin;
             }
             else {
+                # See NOTEs below.
                 #$data = base64_decode($record['sessdata']);
                 $data = $record['sessdata'];
             }
+
+            # Hash on the data fed to and given from the user.
             $this->lasthash = sha1($data);
         }
 
@@ -562,7 +625,14 @@ class mongodb extends handler {
             return false;
         }
 
+        # Hash on the data fed to and given from the user.
         $hash = sha1($session_data);
+        # Try to skip a write if we can.
+        # TODO: Hmm, will this interact poorly with the timemodified pruning behavior?
+        if ($hash === $this->lasthash) {
+            return true;
+        }
+
         // Try sending raw binary data (for use with igbinary).
         // NOTE: Requires changing the sessions.sessdata column schema to LONGBLOB instead of LONGTEXT.
         if ($this->session_serializer == 'igbinary') {
@@ -571,10 +641,6 @@ class mongodb extends handler {
         else {
             #$sessdata = base64_encode($session_data); // There might be some binary mess :-(
             $sessdata = $session_data;  // but let's try it without for now
-        }
-
-        if ($hash === $this->lasthash) {
-            return true;
         }
 
         try {
@@ -639,10 +705,12 @@ class mongodb extends handler {
 
         $session_id = (string)$session['_id'];
         if ($this->sessdata_id and $session_id == $this->sessdata_id) {
-            try {
-                $this->database->release_session_lock();
-            } catch (\Exception $ex) {
-                // Ignore problems.
+            if ($this->sesslock_id) {
+                try {
+                    $this->database->release_session_lock();
+                } catch (\Exception $ex) {
+                    // Ignore problems.
+                }
             }
             $this->sessdata_id = null;
             $this->sesslock_id = null;
@@ -650,6 +718,7 @@ class mongodb extends handler {
             $this->lasthash = null;
         }
 
+        # Remove by $sid per session_set_save_handler() spec.
         #$result = $this->sessdata_collection->remove(array('_id'=>$session['id']), array(
         $result = $this->sessdata_collection->remove(array('sid'=>$sid), array(
             #'safe' => $this->usesafe,
@@ -657,6 +726,7 @@ class mongodb extends handler {
         ));
         if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
 
+        # Just for safety's sake remove all sesslocks for that sid?
         $result = $this->sesslock_collection->remove(array('sid'=>$sid), array(
             #'safe' => $this->usesafe,
             #'w' => ($this->usesafe) ? 1 : 0,
