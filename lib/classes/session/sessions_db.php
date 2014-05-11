@@ -322,6 +322,7 @@ class sessions_db extends handler {
             $sessdata = $session_data;
         }
         else {
+            # See NOTEs below.
             #$sessdata = base64_encode($session_data); // There might be some binary mess :-(
             $sessdata = $session_data;  // But we don't really care since we're using a LONGBLOB field anyways.
         }
