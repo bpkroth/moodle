@@ -335,6 +335,7 @@ class sessions_db extends handler {
 
                 // Only update the timemodified field periodically to reduce index fixups.
                 // See Also: manager.php
+                global $CFG;
                 $updatefreq = empty($CFG->session_update_timemodified_frequency) ? 20 : $CFG->session_update_timemodified_frequency;
                 if ($this->timemodified < time() - $updatefreq) {
                     // Update the session modified flag only once every 20 seconds.
