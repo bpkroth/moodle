@@ -274,7 +274,7 @@ class cachestore_mongodb extends cache_store implements cache_is_configurable {
             return false;
         }
         $fn = $this->unserializer;
-        if ($fn == 'igbinary_unserializer') {
+        if ($fn == 'igbinary_unserialize') {
             $data = @$fn($result['data']->bin);
         }
         else {
