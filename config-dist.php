@@ -266,6 +266,20 @@ $CFG->admin = 'admin';
 //      $CFG->session_memcached_acquire_lock_timeout = 120;
 //      $CFG->session_memcached_lock_expire = 7200;       // Ignored if memcached extension <= 2.1.0
 //
+//   MongoDB session handler (requires mongodb server and extension):
+//      $CFG->session_handler_class = '\core\session\mongodb';
+//      $CFG->session_mongodb_server = 'mongodb://127.0.0.1:27017';	// mongodb connection string
+//      $CFG->session_mongodb_database = 'msessdata';
+//      $CFG->session_mongodb_username = '';				// optional
+//      $CFG->session_mongodb_password = '';				// optional
+//      $CFG->session_mongodb_replicaset = '';				// optional
+//      $CFG->session_mongodb_usesafe = true;				// set to false to not wait for possible write errors and possibly increase performance
+//      $CFG->session_mongodb_acquire_lock_timeout = 120;
+//      # NOTE: If you change these values you must drop and reindex the sessdata and sesslock collections:
+//      $CFG->session_mongodb_lock_expire = 7200;			// how long to leave stale locks in MongoDB before removing them - this should be at least as large as idle session timeout
+//      $CFG->session_mongodb_sessdata_expire = 28800;			// how long to leave stale sessdata in MongoDB before removing them
+//      $CFG->session_mongodb_reindex_timestamp = 1399755771;		// set this to the current timestamp to force the indices to be rebuilt when you change the values above
+//
 // Following setting allows you to use a different PHP serializer for the above session stores.
 //      $CFG->session_serializer = 'php';       // the default
 //      $CFG->session_serializer = 'igbinary';  // may result in smaller data and therefore less network traffic so faster response times
