@@ -219,6 +219,7 @@ class cachestore_mongodb extends cache_store implements cache_is_configurable {
         $this->definitionhash = $definition->generate_definition_hash();
         $this->collection = $this->database->selectCollection($this->definitionhash);
         $this->collection->ensureIndex(array('key' => 1), array(
+            'unique' => true, # Otherwise the insert() operation in set() may result in duplicate cache values.
             'safe' => $this->usesafe,
             'name' => 'idx_key'
         ));
@@ -272,8 +273,13 @@ class cachestore_mongodb extends cache_store implements cache_is_configurable {
         if ($result === null || !array_key_exists('data', $result)) {
             return false;
         }
-        $fn = @$this->unserializer;
-        $data = $fn($result['data']);
+        $fn = $this->unserializer;
+        if ($fn == 'igbinary_serializer') {
+            $data = @$fn($result['data']->bin);
+        }
+        else {
+            $data = @$fn($result['data']);
+        }
         return $data;
     }
 
@@ -330,7 +336,7 @@ class cachestore_mongodb extends cache_store implements cache_is_configurable {
         $fn = $this->serializer;
         $data = $fn($data);
         if ($this->serializer == 'igbinary_serialize') {
-            $record['data'] = new MongoBinData($data, MongoBinData::GENERIC);
+            $record['data'] = new MongoBinData($data);
         }
         else {
             $record['data'] = $data;
