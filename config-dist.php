@@ -240,6 +240,17 @@ $CFG->admin = 'admin';
 //      $CFG->session_memcached_acquire_lock_timeout = 120;
 //      $CFG->session_memcached_lock_expire = 7200;       // Ignored if memcached extension <= 2.1.0
 //
+//   MongoDB session handler (requires mongodb server and extension):
+//      $CFG->session_handler_class = '\core\session\mongodb';
+//      $CFG->session_mongodb_server = 'mongodb://127.0.0.1:27017';	// mongodb connection string
+//      $CFG->session_mongodb_database = 'msessdata';
+//      $CFG->session_mongodb_username = '';				// optional
+//      $CFG->session_mongodb_password = '';				// optional
+//      $CFG->session_mongodb_replicaset = '';				// optional
+//      $CFG->session_mongodb_usesafe = true;				// set to false to not wait for possible write errors and possibly increase performance
+//      $CFG->session_mongodb_acquire_lock_timeout = 120;
+//      $CFG->session_mongodb_lock_expire = 7200;
+//
 // Following setting allows you to alter how frequently is timemodified updated in sessions table.
 //      $CFG->session_update_timemodified_frequency = 20; // In seconds.
 //
