@@ -121,6 +121,14 @@ class mongodb extends handler {
             $this->session_serializer = $CFG->session_serializer;
         }
 
+        if (!empty($CFG->usesafe)) {
+            $this->usesafe = $CFG->session_mongodb_usesafe;
+        }
+    }
+
+    private function connect_db() {
+        if (!empty($this->connection)) return;
+
         // Adapted from cache/stores/mongodb/lib.php
         $server = 'mongodb://127.0.0.1:27017';
         if (isset($CFG->session_mongodb_server)) {
@@ -139,9 +147,6 @@ class mongodb extends handler {
         }
         if (!empty($CFG->session_mongodb_replicaset)) {
             $options['replicaSet'] = $CFG->session_mongodb_replicaset;
-        }
-        if (!empty($CFG->usesafe)) {
-            $this->usesafe = $CFG->session_mongodb_usesafe;
         }
 
         try {
@@ -184,6 +189,8 @@ class mongodb extends handler {
      */
     public function setup_collections_indexes($force_reindex = false) {
         global $CFG;
+
+        $this->connect_db();
 
         if (empty($this->database)) {
             return false;
@@ -356,11 +363,6 @@ class mongodb extends handler {
      * Init session handler.
      */
     public function init() {
-        # DONE: We may want to move all of these ensureIndex() collection setup 
-        # calls to something that's a bit more periodic, or perhaps done by the 
-        # administrator prior to using this session store.
-        $this->setup_collections_indexes();
-
         $result = session_set_save_handler(array($this, 'handler_open'),
             array($this, 'handler_close'),
             array($this, 'handler_read'),
@@ -381,6 +383,7 @@ class mongodb extends handler {
      * @return bool true if session found.
      */
     public function session_exists($sid) {
+        $this->connect_db();
         return ($this->sessdata_collection->count(array('sid'=>$sid)));
     }
 
@@ -390,6 +393,8 @@ class mongodb extends handler {
      */
     public function kill_all_sessions() {
         try {
+            $this->connect_db();
+
             $result = $this->sessdata_collection->remove();
             if (!self::check_mongodb_response($result)) {
                 error_log(print_r($result, true));
@@ -412,6 +417,8 @@ class mongodb extends handler {
      * @param string $sid
      */
     public function kill_session($sid) {
+        $this->connect_db();
+
         $result = $this->sessdata_collection->remove(array('sid'=>$sid), array(
             #'safe' => $this->usesafe,
             #'w' => ($this->usesafe) ? 1 : 0,
@@ -552,6 +559,13 @@ class mongodb extends handler {
      * @return bool success
      */
     public function handler_open($save_path, $session_name) {
+        $this->connect_db();
+
+        # DONE: We may want to move all of these ensureIndex() collection setup 
+        # calls to something that's a bit more periodic, or perhaps done by the 
+        # administrator prior to using this session store.
+        $this->setup_collections_indexes();
+
         // Note: we use the already open database.
         return (!empty($this->database));
     }
