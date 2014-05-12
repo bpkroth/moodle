@@ -547,7 +547,7 @@ class mongodb extends handler {
      */
     public function handler_open($save_path, $session_name) {
         // Note: we use the already open database.
-        return ($this->database);
+        return (!empty($this->database));
     }
 
     /**
