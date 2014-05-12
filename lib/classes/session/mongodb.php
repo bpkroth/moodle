@@ -146,10 +146,8 @@ class mongodb extends handler {
 
         try {
             // NOTE: The Mongo class is deprecated.  The mongodb cachestore should probably also be fixed up.
-            //$this->connection = new MongoClient($server, $options);
-            // But apparently our version of PHP doesn't have MongoClient yet.
-            $this->connection = new Mongo($server, $options);
-        } catch (MongoConnectionException $e) {
+            $this->connection = new \MongoClient($server, $options);
+        } catch (\MongoConnectionException $e) {
             // We only want to catch MongoConnectionExceptions here.
         }
         $this->database = $this->connection->selectDB($databasename);
@@ -350,7 +348,7 @@ class mongodb extends handler {
 
             $result = $this->sesslock_collection->remove();
             if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
-        } catch (MongoException $ignored) {
+        } catch (\MongoException $ignored) {
             // Do not show any warnings - might be during upgrade/installation.
         }
         return;
@@ -432,7 +430,7 @@ class mongodb extends handler {
         } while (empty($this->sesslock_id));
 
         if (empty($this->sesslock_id)) {
-            throw new dml_sessionwait_exception();
+            throw new \dml_sessionwait_exception();
         }
 
         return $this->sesslock_id;
@@ -455,7 +453,7 @@ class mongodb extends handler {
         }
 
         $lockdoc = array(
-            '_id' => new MongoId($this->sesslock_id)
+            '_id' => new \MongoId($this->sesslock_id)
         );
         $result = $this->sesslock_collection->remove($lockdoc, array(
             # These locks aren't removed on disconnect like they are for MySQL, 
@@ -641,7 +639,7 @@ class mongodb extends handler {
         // Try sending raw binary data (for use with igbinary).
         // NOTE: Requires changing the sessions.sessdata column schema to LONGBLOB instead of LONGTEXT.
         if ($this->session_serializer == 'igbinary') {
-            $sessdata = new MongoBinData($session_data);
+            $sessdata = new \MongoBinData($session_data);
         }
         else {
             #$sessdata = base64_encode($session_data); // There might be some binary mess :-(
@@ -654,7 +652,7 @@ class mongodb extends handler {
                 'sessdata' => $sessdata
             );
             if ($this->sessdata_id) {
-                $upsert['_id'] = new MongoId($this->sessdata_id);
+                $upsert['_id'] = new \MongoId($this->sessdata_id);
 
                 // Only update the timemodified field periodically to reduce index fixups.
                 // See Also: manager.php
@@ -679,7 +677,7 @@ class mongodb extends handler {
             # NOTE: This should be generated client side, so it should work, even with usesafe=false.
             # http://www.php.net/manual/en/class.mongoid.php
             $this->sessdata_id = (string)$upsert['_id'];
-        } catch (MongoException $ex) {
+        } catch (\MongoException $ex) {
             error_log('MongoException when writing session data : '.$sid.' - '.$ex->getMessage());
         } catch (\Exception $ex) {
             // Do not rethrow exceptions here, this should not happen.
