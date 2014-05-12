@@ -97,6 +97,9 @@ class sessions_db extends handler {
     /** @var \moodle_database $database session database */
     protected $database = null;
 
+    /** @var bool $connected */
+    protected $connected = false;
+
     /** @var bool $failed session read/init failed, do not write back to DB */
     protected $failed = false;
 
@@ -124,6 +127,14 @@ class sessions_db extends handler {
 
         if (isset($CFG->session_serializer)) {
             $this->session_serializer = $CFG->session_serializer;
+        }
+    }
+
+    private function connect_db() {
+        global $SDB;
+        if (!$this->connected) {
+            connect_SDB();
+            $this->connected = true;
         }
     }
 
@@ -155,6 +166,7 @@ class sessions_db extends handler {
      * @return bool true if session found.
      */
     public function session_exists($sid) {
+        $this->connect_db();
         try {
             return $this->database->record_exists('sessdata', array('sid'=>$sid));
         } catch (\dml_exception $ex) {
@@ -167,6 +179,7 @@ class sessions_db extends handler {
      * purged afterwards.
      */
     public function kill_all_sessions() {
+        $this->connect_db();
         try {
             $this->database->delete_records('sessdata');
         } catch (\dml_exception $ignored) {
@@ -180,6 +193,7 @@ class sessions_db extends handler {
      * @param string $sid
      */
     public function kill_session($sid) {
+        $this->connect_db();
         $this->database->delete_records('sessdata', array('sid'=>$sid));
         return;
     }
@@ -194,7 +208,7 @@ class sessions_db extends handler {
      * @return bool success
      */
     public function handler_open($save_path, $session_name) {
-        // Note: we use the already open database.
+        $this->connect_db();
         return true;
     }
 
