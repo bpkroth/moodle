@@ -146,7 +146,9 @@ class mongodb extends handler {
 
         try {
             // NOTE: The Mongo class is deprecated.  The mongodb cachestore should probably also be fixed up.
-            $this->connection = new MongoClient($server, $options);
+            //$this->connection = new MongoClient($server, $options);
+            // But apparently our version of PHP doesn't have MongoClient yet.
+            $this->connection = new Mongo($server, $options);
         } catch (MongoConnectionException $e) {
             // We only want to catch MongoConnectionExceptions here.
         }
