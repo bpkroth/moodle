@@ -448,7 +448,7 @@ function setup_SDB() {
  * A quick hack to separate out the connection portion from the rest of the driver setup.
  */
 function connect_SDB() {
-    global $SDB;
+    global $CFG, $SDB;
     try {
         $SDB->connect($CFG->sessions_dbhost, $CFG->sessions_dbuser, $CFG->sessions_dbpass, $CFG->sessions_dbname, $CFG->sessions_prefix, $CFG->sessions_dboptions);
     } catch (moodle_exception $e) {
