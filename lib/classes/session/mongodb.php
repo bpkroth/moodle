@@ -147,12 +147,12 @@ class mongodb extends handler {
         try {
             // NOTE: The Mongo class is deprecated.  The mongodb cachestore should probably also be fixed up.
             $this->connection = new \MongoClient($server, $options);
+            $this->database = $this->connection->selectDB($databasename);
+            $this->sessdata_collection = $this->database->selectCollection('sessdata');
+            $this->sesslock_collection = $this->database->selectCollection('sesslock');
         } catch (\MongoConnectionException $e) {
             // We only want to catch MongoConnectionExceptions here.
         }
-        $this->database = $this->connection->selectDB($databasename);
-        $this->sessdata_collection = $this->database->selectCollection('sessdata');
-        $this->sesslock_collection = $this->database->selectCollection('sesslock');
     }
 
     /**
@@ -547,7 +547,7 @@ class mongodb extends handler {
      */
     public function handler_open($save_path, $session_name) {
         // Note: we use the already open database.
-        return true;
+        return ($this->database);
     }
 
     /**
