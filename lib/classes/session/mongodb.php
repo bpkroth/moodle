@@ -719,10 +719,11 @@ class mongodb extends handler {
                     $upsert_doc['timemodified'] = time();
                 }
 
+                $doc_id = new \MongoId($this->sessdata_id);
                 $result = $this->sessdata_collection->update(
                     array(
-                        '_id' => new \MongoId($this->sessdata_id),
-                        'sid' => $sid,
+                        '_id' => $doc_id,
+                        'sid' => $sid
                     ),
                     $upsert_doc,
                     $options
