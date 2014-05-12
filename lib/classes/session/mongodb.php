@@ -255,6 +255,7 @@ class mongodb extends handler {
             error_log(print_r($result, true));
             throw new exception('mongodb-ensureIndex-problem', 'error');
         }
+        /* Overkill and too much maintenance?
         # We should only ever need to perform point lookups of session ids, so 
         # hash indexes should be most efficient, so add one of those too.
         $result = $this->sessdata_collection->ensureIndex(array('sid' => 'hashed'), array(
@@ -267,6 +268,7 @@ class mongodb extends handler {
             error_log(print_r($result, true));
             throw new exception('mongodb-ensureIndex-problem', 'error');
         }
+         */
         $result = $this->sessdata_collection->ensureIndex(array('timemodified' => 1), array(
             #'safe' => $this->usesafe,
             #'w' => ($this->usesafe) ? 1 : 0,
@@ -299,6 +301,7 @@ class mongodb extends handler {
             error_log(print_r($result, true));
             throw new exception('mongodb-ensureIndex-problem', 'error');
         }
+        /* Overkill and too much maintenance?
         # We should only ever need to perform point lookups of session ids, so 
         # hash indexes should be most efficient, so add one of those too.
         $result = $this->sesslock_collection->ensureIndex(array('sid' => 'hashed'), array(
@@ -311,6 +314,7 @@ class mongodb extends handler {
             error_log(print_r($result, true));
             throw new exception('mongodb-ensureIndex-problem', 'error');
         }
+         */
         $result = $this->sesslock_collection->ensureIndex(array('timemodified' => 1), array(
             #'safe' => $this->usesafe,
             #'w' => ($this->usesafe) ? 1 : 0,
