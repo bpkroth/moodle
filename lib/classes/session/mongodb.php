@@ -701,12 +701,16 @@ class mongodb extends handler {
 
         try {
             # Construct a document to update or insert into the db.
+            # NOTE: The save() mongo function is a little noisy in the logs, so 
+            # we try and deal with the right method ourselves manually.
             $upsert = array(
                 'sessdata' => $sessdata
             );
-            if ($this->sessdata_id) {
-                $upsert['_id'] = new \MongoId($this->sessdata_id);
-
+            $options = array(
+                'safe' => $this->usesafe,
+                'w' => ($this->usesafe) ? 1 : 0
+            );
+            if ($this->sessdata_id) {   # update
                 // Only update the timemodified field periodically to reduce index fixups.
                 // See Also: manager.php
                 $updatefreq = empty($CFG->session_update_timemodified_frequency) ? 20 : $CFG->session_update_timemodified_frequency;
@@ -714,19 +718,28 @@ class mongodb extends handler {
                     // Update the session modified flag only once every 20 seconds.
                     $upsert['timemodified'] = time();
                 }
-            } else {
+
+                $result = $this->sessdata_collection->update(
+                    array(
+                        '_id' => new \MongoId($this->sessdata_id),
+                        'sid' => $sid,
+                    ),
+                    $upsert,
+                    $options
+                );
+                if (!self::check_mongodb_response($result)) {
+                    error_log(print_r($result, true));
+                    throw new exception('mongodb-update-problem', 'error');
+                }
+            } else {    # insert
                 // This happens in the first request when session record was just created in manager.
                 $upsert['sid'] = $sid;
                 $upsert['timemodified'] = time();
-            }
-
-            $result = $this->sessdata_collection->save($upsert, array(
-                'safe' => $this->usesafe,
-                'w' => ($this->usesafe) ? 1 : 0,
-            ));
-            if (!self::check_mongodb_response($result)) {
-                error_log(print_r($result, true));
-                throw new exception('mongodb-save-problem', 'error');
+                $result = $this->sessdata_collection->insert($upsert, $options);
+                if (!self::check_mongodb_response($result)) {
+                    error_log(print_r($result, true));
+                    throw new exception('mongodb-insert-problem', 'error');
+                }
             }
 
             # Save the sessdata document id.
