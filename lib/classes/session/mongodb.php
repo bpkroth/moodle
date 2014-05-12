@@ -608,7 +608,7 @@ class mongodb extends handler {
                 // TODO: What about the "not already locked" part?
                 $this->get_session_lock($sid);
                 $this->sessdata_id = $record_id;
-                $this->timemodified = $record['timemodified'];
+                $this->timemodified = $record['timemodified']->sec;
             }
         } catch (\dml_sessionwait_exception $ex) {
             // This is a fatal error, better inform users.
@@ -716,7 +716,7 @@ class mongodb extends handler {
                 $updatefreq = empty($CFG->session_update_timemodified_frequency) ? 20 : $CFG->session_update_timemodified_frequency;
                 if ($this->timemodified < time() - $updatefreq) {
                     // Update the session modified flag only once every 20 seconds.
-                    $upsert_doc['timemodified'] = time();
+                    $upsert_doc['timemodified'] = new \MongoDate(time());
                 }
 
                 $doc_id = new \MongoId($this->sessdata_id);
@@ -736,7 +736,7 @@ class mongodb extends handler {
                 // This happens in the first request when session record was just created in manager.
                 $upsert_doc['_id'] = new \MongoId();
                 $upsert_doc['sid'] = $sid;
-                $upsert_doc['timemodified'] = time();
+                $upsert_doc['timemodified'] = new \MongoDate(time());
                 $result = $this->sessdata_collection->insert($upsert_doc, $options);
                 if (!self::check_mongodb_response($result)) {
                     error_log(print_r($result, true));
@@ -829,7 +829,7 @@ class mongodb extends handler {
         if (!$stalelifetime = ini_get('session.gc_maxlifetime')) {
             return true;
         }
-        $purgebefore = (time() - $stalelifetime);
+        $purgebefore = new \MongoDate(time() - $stalelifetime);
         $cursor = $this->sessdata_collection->find(array('timemodified' => array('$lt', $purgebefore)), array('sid'));
         foreach ($cursor as $doc) {
             $result = $this->sessdata_collection->remove(array('sid' => $doc['sid']), array(
