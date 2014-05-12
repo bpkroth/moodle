@@ -704,7 +704,6 @@ class mongodb extends handler {
             # NOTE: The save() mongo function is a little noisy in the logs, so 
             # we try and deal with the right method ourselves manually.
             $upsert_doc = array(
-                'sid' => $sid,
                 'sessdata' => $sessdata
             );
             $options = array(
@@ -726,7 +725,7 @@ class mongodb extends handler {
                         '_id' => $doc_id,
                         'sid' => $sid
                     ),
-                    $upsert_doc,
+                    array('$set' => $upsert_doc),
                     $options
                 );
                 if (!self::check_mongodb_response($result)) {
@@ -736,6 +735,7 @@ class mongodb extends handler {
             } else {    # insert
                 // This happens in the first request when session record was just created in manager.
                 $upsert_doc['_id'] = new \MongoId();
+                $upsert_doc['sid'] = $sid;
                 $upsert_doc['timemodified'] = new \MongoDate(time());
                 $result = $this->sessdata_collection->insert($upsert_doc, $options);
                 if (!self::check_mongodb_response($result)) {
