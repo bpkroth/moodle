@@ -703,7 +703,7 @@ class mongodb extends handler {
             # Construct a document to update or insert into the db.
             # NOTE: The save() mongo function is a little noisy in the logs, so 
             # we try and deal with the right method ourselves manually.
-            $upsert = array(
+            $upsert_doc = array(
                 'sessdata' => $sessdata
             );
             $options = array(
@@ -716,7 +716,7 @@ class mongodb extends handler {
                 $updatefreq = empty($CFG->session_update_timemodified_frequency) ? 20 : $CFG->session_update_timemodified_frequency;
                 if ($this->timemodified < time() - $updatefreq) {
                     // Update the session modified flag only once every 20 seconds.
-                    $upsert['timemodified'] = time();
+                    $upsert_doc['timemodified'] = time();
                 }
 
                 $result = $this->sessdata_collection->update(
@@ -724,7 +724,7 @@ class mongodb extends handler {
                         '_id' => new \MongoId($this->sessdata_id),
                         'sid' => $sid,
                     ),
-                    $upsert,
+                    $upsert_doc,
                     $options
                 );
                 if (!self::check_mongodb_response($result)) {
@@ -733,9 +733,9 @@ class mongodb extends handler {
                 }
             } else {    # insert
                 // This happens in the first request when session record was just created in manager.
-                $upsert['sid'] = $sid;
-                $upsert['timemodified'] = time();
-                $result = $this->sessdata_collection->insert($upsert, $options);
+                $upsert_doc['sid'] = $sid;
+                $upsert_doc['timemodified'] = time();
+                $result = $this->sessdata_collection->insert($upsert_doc, $options);
                 if (!self::check_mongodb_response($result)) {
                     error_log(print_r($result, true));
                     throw new exception('mongodb-insert-problem', 'error');
@@ -745,7 +745,7 @@ class mongodb extends handler {
             # Save the sessdata document id.
             # NOTE: This should be generated client side, so it should work, even with usesafe=false.
             # http://www.php.net/manual/en/class.mongoid.php
-            $this->sessdata_id = (string)$upsert['_id'];
+            $this->sessdata_id = (string)$upsert_doc['_id'];
         } catch (\MongoException $ex) {
             error_log('MongoException when writing session data : '.$sid.' - '.$ex->getMessage());
         } catch (\Exception $ex) {
