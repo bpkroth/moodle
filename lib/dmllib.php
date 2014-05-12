@@ -439,6 +439,16 @@ function setup_SDB() {
         throw new dml_exception('dbdriverproblem', "Unknown driver $CFG->sessions_dblibrary/$CFG->sessions_dbtype");
     }
 
+    $CFG->sessions_dbfamily = $SDB->get_dbfamily(); // TODO: BC only for now
+
+    return true;
+}
+
+/**
+ * A quick hack to separate out the connection portion from the rest of the driver setup.
+ */
+function connect_SDB() {
+    global $SDB;
     try {
         $SDB->connect($CFG->sessions_dbhost, $CFG->sessions_dbuser, $CFG->sessions_dbpass, $CFG->sessions_dbname, $CFG->sessions_prefix, $CFG->sessions_dboptions);
     } catch (moodle_exception $e) {
@@ -467,8 +477,5 @@ function setup_SDB() {
         // rethrow the exception
         throw $e;
     }
-
-    $CFG->sessions_dbfamily = $SDB->get_dbfamily(); // TODO: BC only for now
-
     return true;
 }
