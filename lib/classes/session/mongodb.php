@@ -236,10 +236,11 @@ class mongodb extends handler {
         # Setup the sessdata collection indices.
         #
         $result = $this->sessdata_collection->deleteIndexes();
-        if (!self::check_mongodb_response($result)) {
-            error_log(print_r($result, true));
-            throw new exception('mongodb-deleteIndexes-problem', 'error');
-        }
+        # Need to ignore this result in case the collection didn't exist yet.
+        #if (!self::check_mongodb_response($result)) {
+        #    error_log(print_r($result, true));
+        #    throw new exception('mongodb-deleteIndexes-problem', 'error');
+        #}
         # Here's an index to enforce uniqueness constraints on the sid field.
         $result = $this->sessdata_collection->ensureIndex(array('sid' => 1), array(
             #'safe' => $this->usesafe,
@@ -279,10 +280,11 @@ class mongodb extends handler {
         # Setup the sesslock collection.
         #
         $result = $this->sesslock_collection->deleteIndexes();
-        if (!self::check_mongodb_response($result)) {
-            error_log(print_r($result, true));
-            throw new exception('mongodb-deleteIndexes-problem', 'error');
-        }
+        # Need to ignore this result in case the collection didn't exist yet.
+        #if (!self::check_mongodb_response($result)) {
+        #    error_log(print_r($result, true));
+        #    throw new exception('mongodb-deleteIndexes-problem', 'error');
+        #}
         # Here's an index to enforce uniqueness constraints on the sid field.
         $result = $this->sesslock_collection->ensureIndex(array('sid' => 1), array(
             #'safe' => $this->usesafe,
