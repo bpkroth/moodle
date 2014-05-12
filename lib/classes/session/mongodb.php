@@ -698,7 +698,7 @@ class mongodb extends handler {
         // Try sending raw binary data (for use with igbinary).
         // NOTE: Requires changing the sessions.sessdata column schema to LONGBLOB instead of LONGTEXT.
         if ($this->session_serializer == 'igbinary') {
-            $sessdata = new \MongoBinData($session_data);
+            $sessdata = new \MongoBinData($session_data, MongoBinData::BYTE_ARRAY);
         }
         else {
             #$sessdata = base64_encode($session_data); // There might be some binary mess :-(
