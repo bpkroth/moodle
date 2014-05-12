@@ -180,9 +180,14 @@ class mongodb extends handler {
     /**
      * Make sure that the collections have the necessary indexes.
      * @param $force_reindex Whether or not to force a reindex.
+     * @returns bool
      */
     public function setup_collections_indexes($force_reindex = false) {
         global $CFG;
+
+        if (empty($this->database)) {
+            return false;
+        }
 
         # Check to see if we need to reindex.
  
@@ -344,6 +349,7 @@ class mongodb extends handler {
             error_log(print_r($result, true));
             throw new exception('mongodb-update-problem', 'error');
         }
+        return true;
     }
 
     /**
