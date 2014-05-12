@@ -733,6 +733,7 @@ class mongodb extends handler {
                 }
             } else {    # insert
                 // This happens in the first request when session record was just created in manager.
+                $upsert_doc['_id'] = new \MongoId();
                 $upsert_doc['sid'] = $sid;
                 $upsert_doc['timemodified'] = time();
                 $result = $this->sessdata_collection->insert($upsert_doc, $options);
@@ -740,12 +741,12 @@ class mongodb extends handler {
                     error_log(print_r($result, true));
                     throw new exception('mongodb-insert-problem', 'error');
                 }
-            }
 
-            # Save the sessdata document id.
-            # NOTE: This should be generated client side, so it should work, even with usesafe=false.
-            # http://www.php.net/manual/en/class.mongoid.php
-            $this->sessdata_id = (string)$upsert_doc['_id'];
+                # Save the sessdata document id.
+                # NOTE: This should be generated client side, so it should work, even with usesafe=false.
+                # http://www.php.net/manual/en/class.mongoid.php
+                $this->sessdata_id = (string)$upsert_doc['_id'];
+            }
         } catch (\MongoException $ex) {
             error_log('MongoException when writing session data : '.$sid.' - '.$ex->getMessage());
         } catch (\Exception $ex) {
