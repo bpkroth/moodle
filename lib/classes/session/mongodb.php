@@ -199,7 +199,10 @@ class mongodb extends handler {
             'unique' => true,
             'name' => 'idx_key_unique'
         ));
-        if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
+        if (!self::check_mongodb_response($result)) {
+            error_log(print_r($result, true));
+            throw new exception('mongodb-ensureIndex-problem', 'error');
+        }
 
         $config_doc = $config_collection->findOne(array('key' => 'last_reindex_timestamp'), array('value'));
         if (!empty($config_doc) && !empty($config_doc['value'])) {
@@ -233,7 +236,10 @@ class mongodb extends handler {
         # Setup the sessdata collection indices.
         #
         $result = $this->sessdata_collection->deleteIndexes();
-        if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
+        if (!self::check_mongodb_response($result)) {
+            error_log(print_r($result, true));
+            throw new exception('mongodb-deleteIndexes-problem', 'error');
+        }
         # Here's an index to enforce uniqueness constraints on the sid field.
         $result = $this->sessdata_collection->ensureIndex(array('sid' => 1), array(
             #'safe' => $this->usesafe,
@@ -242,7 +248,10 @@ class mongodb extends handler {
             'dropDups' => true,
             'name' => 'idx_sid_unique'
         ));
-        if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
+        if (!self::check_mongodb_response($result)) {
+            error_log(print_r($result, true));
+            throw new exception('mongodb-ensureIndex-problem', 'error');
+        }
         # We should only ever need to perform point lookups of session ids, so 
         # hash indexes should be most efficient, so add one of those too.
         $result = $this->sessdata_collection->ensureIndex(array('sid' => 'hashed'), array(
@@ -251,20 +260,29 @@ class mongodb extends handler {
             #'unique' => true,  # hash indexes currently don't support unique constraints
             'name' => 'idx_sid_hashed'
         ));
-        if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
+        if (!self::check_mongodb_response($result)) {
+            error_log(print_r($result, true));
+            throw new exception('mongodb-ensureIndex-problem', 'error');
+        }
         $result = $this->sessdata_collection->ensureIndex(array('timemodified' => 1), array(
             #'safe' => $this->usesafe,
             #'w' => ($this->usesafe) ? 1 : 0,
             'expireAfterSeconds' => $this->sessdata_expire,
             'name' => 'idx_timemodified'
         ));
-        if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
+        if (!self::check_mongodb_response($result)) {
+            error_log(print_r($result, true));
+            throw new exception('mongodb-ensureIndex-problem', 'error');
+        }
 
         #
         # Setup the sesslock collection.
         #
         $result = $this->sesslock_collection->deleteIndexes();
-        if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
+        if (!self::check_mongodb_response($result)) {
+            error_log(print_r($result, true));
+            throw new exception('mongodb-deleteIndexes-problem', 'error');
+        }
         # Here's an index to enforce uniqueness constraints on the sid field.
         $result = $this->sesslock_collection->ensureIndex(array('sid' => 1), array(
             #'safe' => $this->usesafe,
@@ -273,7 +291,10 @@ class mongodb extends handler {
             'dropDups' => true,
             'name' => 'idx_sid_unique'
         ));
-        if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
+        if (!self::check_mongodb_response($result)) {
+            error_log(print_r($result, true));
+            throw new exception('mongodb-ensureIndex-problem', 'error');
+        }
         # We should only ever need to perform point lookups of session ids, so 
         # hash indexes should be most efficient, so add one of those too.
         $result = $this->sesslock_collection->ensureIndex(array('sid' => 'hashed'), array(
@@ -282,14 +303,20 @@ class mongodb extends handler {
             #'unique' => true,  # hash indexes currently don't support unique constraints
             'name' => 'idx_sid_hashed'
         ));
-        if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
+        if (!self::check_mongodb_response($result)) {
+            error_log(print_r($result, true));
+            throw new exception('mongodb-ensureIndex-problem', 'error');
+        }
         $result = $this->sesslock_collection->ensureIndex(array('timemodified' => 1), array(
             #'safe' => $this->usesafe,
             #'w' => ($this->usesafe) ? 1 : 0,
             'expireAfterSeconds' => $this->lock_expire,
             'name' => 'idx_timemodified'
         ));
-        if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
+        if (!self::check_mongodb_response($result)) {
+            error_log(print_r($result, true));
+            throw new exception('mongodb-ensureIndex-problem', 'error');
+        }
 
         # All done, make a record of that, so we don't have to do this again later.
         $result = $config_collection->update(
@@ -301,8 +328,14 @@ class mongodb extends handler {
                 'upsert' => true    # NOTE: depends on the idx_key_unique index defined above.
             )
         );
-        if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
-        if (is_array($result) && $result['n'] != 1) throw new exception('mongodbwriteproblem', 'error');
+        if (!self::check_mongodb_response($result)) {
+            error_log(print_r($result, true));
+            throw new exception('mongodb-update-problem', 'error');
+        }
+        if (is_array($result) && $result['n'] != 1) {
+            error_log(print_r($result, true));
+            throw new exception('mongodb-update-problem', 'error');
+        }
     }
 
     /**
@@ -344,10 +377,16 @@ class mongodb extends handler {
     public function kill_all_sessions() {
         try {
             $result = $this->sessdata_collection->remove();
-            if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
+            if (!self::check_mongodb_response($result)) {
+                error_log(print_r($result, true));
+                throw new exception('mongodb-remove-problem', 'error');
+            }
 
             $result = $this->sesslock_collection->remove();
-            if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
+            if (!self::check_mongodb_response($result)) {
+                error_log(print_r($result, true));
+                throw new exception('mongodb-remove-problem', 'error');
+            }
         } catch (\MongoException $ignored) {
             // Do not show any warnings - might be during upgrade/installation.
         }
@@ -363,13 +402,19 @@ class mongodb extends handler {
             #'safe' => $this->usesafe,
             #'w' => ($this->usesafe) ? 1 : 0,
         ));
-        if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
+        if (!self::check_mongodb_response($result)) {
+            error_log(print_r($result, true));
+            throw new exception('mongodb-remove-problem', 'error');
+        }
 
         $result = $this->sesslock_collection->remove(array('sid'=>$sid), array(
             #'safe' => $this->usesafe,
             #'w' => ($this->usesafe) ? 1 : 0,
         ));
-        if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
+        if (!self::check_mongodb_response($result)) {
+            error_log(print_r($result, true));
+            throw new exception('mongodb-remove-problem', 'error');
+        }
 
         return;
     }
@@ -469,10 +514,16 @@ class mongodb extends handler {
             'safe' => $this->usesafe,
             'w' => ($this->usesafe) ? 1 : 0,
         ));
-        #if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
-        if (!self::check_mongodb_response($result)) error_log('Failed to remove mongodb sesslock '.$this->sesslock_id);
-        ##if ($result['n'] == 0) throw new exception('mongodbwriteproblem', 'error');    # perhaps something else released the lock
-        #if ($result['n'] == 0) error_log('Failed to remove mongodb sesslock '.$this->sesslock_id);    # perhaps something else released the lock
+        if (!self::check_mongodb_response($result)) {
+            error_log(print_r($result, true));
+            error_log('Failed to remove mongodb sesslock '.$this->sesslock_id);
+            #throw new exception('mongodb-remove-problem', 'error');
+        }
+        #if ($result['n'] == 0) {
+        #    error_log(print_r($result, true));
+        #    error_log('Failed to remove mongodb sesslock '.$this->sesslock_id);
+        #    #throw new exception('mongodb-remove-problem', 'error');    # perhaps something else released the lock
+        #}
         
         $this->sesslock_id = null;
     }
@@ -671,7 +722,10 @@ class mongodb extends handler {
                 'safe' => $this->usesafe,
                 'w' => ($this->usesafe) ? 1 : 0,
             ));
-            if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
+            if (!self::check_mongodb_response($result)) {
+                error_log(print_r($result, true));
+                throw new exception('mongodb-save-problem', 'error');
+            }
 
             # Save the sessdata document id.
             # NOTE: This should be generated client side, so it should work, even with usesafe=false.
@@ -727,14 +781,20 @@ class mongodb extends handler {
             #'safe' => $this->usesafe,
             #'w' => ($this->usesafe) ? 1 : 0,
         ));
-        if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
+        if (!self::check_mongodb_response($result)) {
+            error_log(print_r($result, true));
+            throw new exception('mongodb-remove-problem', 'error');
+        }
 
         # Just for safety's sake remove all sesslocks for that sid?
         $result = $this->sesslock_collection->remove(array('sid'=>$sid), array(
             #'safe' => $this->usesafe,
             #'w' => ($this->usesafe) ? 1 : 0,
         ));
-        if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
+        if (!self::check_mongodb_response($result)) {
+            error_log(print_r($result, true));
+            throw new exception('mongodb-remove-problem', 'error');
+        }
 
         return true;
     }
@@ -759,13 +819,19 @@ class mongodb extends handler {
                 'safe' => $this->usesafe,
                 'w' => ($this->usesafe) ? 1 : 0,
             ));
-            if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
+            if (!self::check_mongodb_response($result)) {
+                error_log(print_r($result, true));
+                throw new exception('mongodb-remove-problem', 'error');
+            }
 
             $result = $this->sesslock_collection->remove(array('sid' => $doc['sid']), array(
                 'safe' => $this->usesafe,
                 'w' => ($this->usesafe) ? 1 : 0,
             ));
-            if (!self::check_mongodb_response($result)) throw new exception('mongodbwriteproblem', 'error');
+            if (!self::check_mongodb_response($result)) {
+                error_log(print_r($result, true));
+                throw new exception('mongodb-remove-problem', 'error');
+            }
         }
         return true;
     }
