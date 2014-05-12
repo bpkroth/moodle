@@ -629,7 +629,7 @@ class mongodb extends handler {
         }
 
         // Finally read the full session data because we know we have the lock now.
-        if (!$record = $this->sessdata_collection->findOne(array('_id'=>$record['_id']), 'sessdata')) {
+        if (!$record = $this->sessdata_collection->findOne(array('_id'=>$record['_id']), array('sessdata'))) {
             // Ignore - something else just deleted the session record.
             $this->failed = true;
             $this->sessdata_id = null;
