@@ -181,7 +181,7 @@ class mongodb extends handler {
      * Make sure that the collections have the necessary indexes.
      * @param $force_reindex Whether or not to force a reindex.
      */
-    public function setup_collection_indexes($force_reindex = false) {
+    public function setup_collections_indexes($force_reindex = false) {
         global $CFG;
 
         # Check to see if we need to reindex.
@@ -312,7 +312,7 @@ class mongodb extends handler {
         # DONE: We may want to move all of these ensureIndex() collection setup 
         # calls to something that's a bit more periodic, or perhaps done by the 
         # administrator prior to using this session store.
-        $this->setup_collections_indices();
+        $this->setup_collections_indexes();
 
         $result = session_set_save_handler(array($this, 'handler_open'),
             array($this, 'handler_close'),
