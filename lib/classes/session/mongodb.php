@@ -766,7 +766,7 @@ class mongodb extends handler {
         if ($this->sessdata_id and $session_id == $this->sessdata_id) {
             if ($this->sesslock_id) {
                 try {
-                    $this->database->release_session_lock();
+                    $this->release_session_lock();
                 } catch (\Exception $ex) {
                     // Ignore problems.
                 }
