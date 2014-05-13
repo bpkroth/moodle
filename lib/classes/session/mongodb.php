@@ -207,19 +207,6 @@ class mongodb extends handler {
 
         $last_reindex_timestamp = null; # but assume we need to if we can't tell when it was last done
         $config_collection = $this->database->selectCollection('config');
-        /* TODO: Trying without this for now.
-        $result = $config_collection->ensureIndex(array('key' => 1), array(
-            'safe' => $this->usesafe,
-            'w' => ($this->usesafe) ? 1 : 0,
-            'unique' => true,
-            'name' => 'idx_key_unique'
-        ));
-        if (!self::check_mongodb_response($result)) {
-            error_log(print_r($result, true));
-            throw new exception('mongodb-ensureIndex-problem', 'error');
-        }
-         */
-
         $config_doc = $config_collection->findOne(array('key' => 'last_reindex_timestamp'), array('value'));
         if (!empty($config_doc) && !empty($config_doc['value'])) {
             $last_reindex_timestamp = $config_doc['value'];
@@ -227,6 +214,18 @@ class mongodb extends handler {
 
         if (!$force_reindex && !empty($last_reindex_timestamp) && $last_reindex_timestamp >= $reindex_timestamp) {
             return;
+        }
+
+        $result = $config_collection->ensureIndex(array('key' => 1), array(
+            #'safe' => $this->usesafe,
+            #'w' => ($this->usesafe) ? 1 : 0,
+            'unique' => true,
+            'dropDups' => true,
+            'name' => 'idx_key_unique'
+        ));
+        if (!self::check_mongodb_response($result)) {
+            error_log(print_r($result, true));
+            throw new exception('mongodb-ensureIndex-problem', 'error');
         }
 
         # NOTE: Both expireAfterSeconds indexes had this comment originally:
