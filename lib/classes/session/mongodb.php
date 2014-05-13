@@ -84,7 +84,7 @@ class mongodb extends handler {
      * Determines if and what safe setting is to be used.
      * @var bool|int
      */
-    protected $usesafe = false;
+    protected $usesafe = true;
 
     /** @var bool $failed session read/init failed, do not write back to DB */
     protected $failed = false;
@@ -121,7 +121,7 @@ class mongodb extends handler {
             $this->session_serializer = $CFG->session_serializer;
         }
 
-        if (!empty($CFG->usesafe)) {
+        if (!empty($CFG->session_mongodb_usesafe)) {
             $this->usesafe = $CFG->session_mongodb_usesafe;
         }
     }
