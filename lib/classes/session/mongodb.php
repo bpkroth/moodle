@@ -121,7 +121,7 @@ class mongodb extends handler {
             $this->session_serializer = $CFG->session_serializer;
         }
 
-        if (!empty($CFG->session_mongodb_usesafe)) {
+        if (isset($CFG->session_mongodb_usesafe)) {
             $this->usesafe = $CFG->session_mongodb_usesafe;
         }
     }
