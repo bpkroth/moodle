@@ -129,6 +129,8 @@ class mongodb extends handler {
     private function connect_db() {
         if ($this->connection !== false ) return;
 
+        global $CFG;
+
         // Adapted from cache/stores/mongodb/lib.php
         $server = 'mongodb://127.0.0.1:27017';
         if (isset($CFG->session_mongodb_server)) {
