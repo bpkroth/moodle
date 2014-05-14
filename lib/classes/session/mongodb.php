@@ -207,7 +207,7 @@ class mongodb extends handler {
 
         $last_reindex_timestamp = null; # but assume we need to if we can't tell when it was last done
         $config_collection = $this->database->selectCollection('config');
-        $config_doc = $config_collection->findOne(array('key' => 'last_reindex_timestamp'), array('value'));
+        $config_doc = $config_collection->findOne(array('key' => 'last_reindex_timestamp'), array('value' => true));
         if (!empty($config_doc) && !empty($config_doc['value'])) {
             $last_reindex_timestamp = $config_doc['value'];
         }
@@ -613,7 +613,7 @@ class mongodb extends handler {
      */
     public function handler_read($sid) {
         try {
-            if (!$record = $this->sessdata_collection->findOne(array('sid'=>$sid), array('timemodified'))) {
+            if (!$record = $this->sessdata_collection->findOne(array('sid'=>$sid), array('timemodified' => true))) {
                 // Let's cheat and skip locking if this is the first access,
                 // do not create the record here, let the manager do it after session init.
                 $this->failed = false;
@@ -658,7 +658,7 @@ class mongodb extends handler {
         }
 
         // Finally read the full session data because we know we have the lock now.
-        if (!$record = $this->sessdata_collection->findOne(array('_id'=>$record['_id']), array('sessdata'))) {
+        if (!$record = $this->sessdata_collection->findOne(array('_id'=>$record['_id']), array('sessdata' => true))) {
             // Ignore - something else just deleted the session record.
             $this->failed = true;
             $this->sessdata_id = null;
@@ -796,7 +796,7 @@ class mongodb extends handler {
      * @return bool success
      */
     public function handler_destroy($sid) {
-        if (!$session = $this->sessdata_collection->findOne(array('sid'=>$sid), array('sid'))) {
+        if (!$session = $this->sessdata_collection->findOne(array('sid'=>$sid), array('sid' => true))) {
             if ($sid == session_id()) {
                 $this->sessdata_id = null;
                 $this->sesslock_id = null;
@@ -859,7 +859,7 @@ class mongodb extends handler {
             return true;
         }
         $purgebefore = new \MongoDate(time() - $stalelifetime);
-        $cursor = $this->sessdata_collection->find(array('timemodified' => array('$lt', $purgebefore)), array('sid'));
+        $cursor = $this->sessdata_collection->find(array('timemodified' => array('$lt', $purgebefore)), array('sid' => true));
         foreach ($cursor as $doc) {
             $result = $this->sessdata_collection->remove(array('sid' => $doc['sid']), array(
                 'safe' => $this->usesafe,
