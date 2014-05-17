@@ -130,6 +130,8 @@ class sessions_db extends handler {
         }
     }
 
+    // TODO: FIXME: Move the actual connect code here.
+    // TODO: Also reduce transaction level to READ_COMMITTED or even READ_UNCOMMITTED.
     private function connect_db() {
         global $SDB;
         if (!$this->connected) {
